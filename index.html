@@ -3,224 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Line Ledger</title>
+<title>Line Ledger: NFL player props, graded at the close</title>
 <meta name="description" content="NFL player-prop picks, time-stamped when made and graded against the closing line. Every result kept.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
-<style>
-/* A stadium tote-board header over a column of perforated bet tickets; the record reads like a ledger. */
-:root {
-  --paper: #f2f4f7; --ticket: #ffffff; --ink: #142139; --muted: #5b6880; --rule: #d6dce6;
-  --accent: #c97f12; --up: #1d7a4e; --down: #b03838; --board: #142139; --board-text: #f3d9a4;
-  --display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
-  --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0d1524; --ticket: #16213a; --ink: #e6ebf3; --muted: #95a2ba; --rule: #283553;
-    --accent: #eeb04f; --up: #52c28d; --down: #e57070; --board: #070d18; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #0d1524; --ticket: #16213a; --ink: #e6ebf3; --muted: #95a2ba; --rule: #283553;
-  --accent: #eeb04f; --up: #52c28d; --down: #e57070; --board: #070d18; color-scheme: dark;
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 400 15px/1.55 var(--body); }
-.wrap { max-width: 1040px; margin: 0 auto; padding-inline: 16px; }
-h1, h2, h3 { font-family: var(--display); font-weight: 800; letter-spacing: .01em; line-height: 1.02; margin: 0; text-wrap: balance; }
-h2 { font-size: clamp(30px, 4.4vw, 42px); text-transform: uppercase; }
-p { margin: 0; max-width: 65ch; }
-.eyebrow { font: 600 12px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-a { color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
-
-.board { background: var(--board); color: var(--board-text); }
-.board .wrap { display: grid; gap: 28px; padding-block: 28px 34px; }
-.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
-.mark { font: 800 26px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #fff; display: flex; align-items: center; gap: 10px; }
-.mark i { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 2px solid var(--board-text); border-radius: 50%; font: 600 13px/1 var(--mono); font-style: normal; color: var(--board-text); }
-nav { display: flex; flex-wrap: wrap; gap: 18px; font: 500 14px/1 var(--body); }
-nav a { text-decoration: none; color: #d4dcea; }
-nav a:hover { color: #fff; }
-.thesis { display: grid; gap: 14px; }
-.thesis h1 { color: #fff; font-size: clamp(40px, 7vw, 74px); text-transform: uppercase; max-width: 14ch; }
-.thesis h1 em { font-style: normal; color: var(--board-text); }
-.thesis p { color: #c3cddd; font-size: 17px; }
-.tote { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border-top: 1px solid #2c3b5c; }
-.tote div { padding: 14px 16px 0 0; display: grid; gap: 4px; }
-.tote b { font: 600 26px/1 var(--mono); color: #fff; font-variant-numeric: tabular-nums; }
-.tote span { font-size: 13px; color: #aeb9cc; }
-
-main { display: grid; gap: 64px; padding-block: 48px 64px; }
-section { display: grid; gap: 22px; }
-.lede { color: var(--muted); }
-.empty { border: 1px dashed var(--rule); border-radius: 10px; padding: 22px; color: var(--muted); background: var(--ticket); }
-
-.tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 18px; }
-.ticket { --notch: 9px; position: relative; background: var(--ticket); border: 1px solid var(--rule); border-radius: 10px;
-  display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
-.ticket::before, .ticket::after { content: ""; position: absolute; top: 112px; width: calc(var(--notch) * 2); height: calc(var(--notch) * 2);
-  background: var(--paper); border: 1px solid var(--rule); border-radius: 50%; z-index: 1; }
-.ticket::before { left: calc(var(--notch) * -1); }
-.ticket::after { right: calc(var(--notch) * -1); }
-.t-top { padding: 16px 18px 14px; display: grid; gap: 6px; min-height: 121px; border-bottom: 2px dashed var(--rule); }
-.t-meta { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--muted); }
-.t-player { font: 800 30px/1 var(--display); text-transform: uppercase; }
-.t-pick { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.t-pick b { font: 600 19px/1.1 var(--mono); }
-.t-pick span { font: 500 13px/1 var(--mono); color: var(--muted); }
-.t-body { padding: 14px 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; align-content: start; }
-.kv { display: grid; gap: 2px; }
-.kv small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.kv b { font: 600 15px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
-.move { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font: 500 13px/1.3 var(--mono); padding-top: 6px; border-top: 1px solid var(--rule); }
-.move .lane { flex: 1; height: 4px; background: var(--rule); border-radius: 4px; position: relative; }
-.move .lane i { position: absolute; top: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); }
-.toward { color: var(--up); } .against { color: var(--down); } .flat { color: var(--muted); }
-.t-foot { padding: 10px 18px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
-.stamp { font: 500 12px/1.2 var(--mono); }
-.chip { font: 600 11px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; padding: 5px 8px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
-.chip.agrees { color: var(--up); } .chip.against { color: var(--down); } .chip.neutral, .chip.noline { color: var(--muted); }
-.chip.W { color: var(--up); } .chip.L { color: var(--down); } .chip.P, .chip.VOID, .chip.open, .chip.live { color: var(--muted); }
-
-.tablebox { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--ticket); }
-table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
-th, td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
-th { font: 600 11.5px/1.2 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-tbody tr:last-child td { border-bottom: 0; }
-tr.sub td:first-child { padding-left: 30px; color: var(--muted); }
-.note { font-size: 13.5px; color: var(--muted); }
-.warn { border-left: 3px solid var(--down); padding: 4px 0 4px 14px; }
-
-.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 26px; counter-reset: s; }
-.steps div { display: grid; gap: 8px; align-content: start; }
-.steps h3 { font-size: 24px; text-transform: uppercase; display: flex; gap: 10px; align-items: baseline; }
-.steps h3::before { counter-increment: s; content: counter(s); font: 600 14px/1 var(--mono); color: var(--accent); }
-.steps p { color: var(--muted); }
-dl.labels { display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px; margin: 0; }
-dl.labels dt { font-weight: 700; }
-dl.labels dd { margin: 0; color: var(--muted); }
-
-footer { border-top: 1px solid var(--rule); }
-footer .wrap { padding-block: 26px 40px; display: grid; gap: 10px; font-size: 13px; color: var(--muted); }
-footer b { color: var(--ink); }
-.chip.pre { color: var(--accent); }
-.prenote { font-size: 12.5px; color: var(--accent); }
-
-/* ---- phones: tables become stacked cards, every value labelled */
-@media (max-width: 680px) {
-  body { font-size: 14.5px; }
-  .board .wrap { gap: 20px; padding-block: 20px 26px; }
-  nav { gap: 6px 14px; font-size: 13px; }
-  .thesis p { font-size: 15.5px; }
-  main { gap: 48px; padding-block: 32px 48px; }
-  .tablebox { overflow: visible; border: 0; background: transparent; display: grid; gap: 10px; }
-  table.cards, table.cards tbody { display: block; min-width: 0; }
-  table.cards thead { display: none; }
-  table.cards tr { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; padding: 14px 16px;
-    background: var(--ticket); border: 1px solid var(--rule); border-radius: 10px; margin-bottom: 10px; }
-  table.cards td { border: 0; padding: 0; white-space: normal; text-align: left; min-width: 0; }
-  table.cards td::before { content: attr(data-l); display: block; font: 600 10.5px/1.5 var(--body);
-    letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  table.cards td.lead { grid-column: 1 / -1; font: 800 22px/1.05 var(--display); text-transform: uppercase; }
-  table.cards td.lead::before { display: none; }
-  table.cards td.lead { order: -1; }
-  table.cards td.wide { grid-column: 1 / -1; }
-  table.cards tr.sub { margin-left: 14px; }
-  table.cards tr.sub td:first-child { padding-left: 0; }
-  table.cards td.span { grid-column: 1 / -1; }
-}
-@media (max-width: 420px) {
-  .wrap { padding-inline: 14px; }
-  .t-top, .t-body, .t-foot { padding-inline: 14px; }
-  .t-player { font-size: 26px; }
-  .t-body { grid-template-columns: repeat(2, 1fr); }
-  .tote { grid-template-columns: 1fr 1fr; }
-  .tote b { font-size: 22px; }
-  dl.labels { grid-template-columns: 1fr; gap: 2px; }
-  dl.labels dd { margin-bottom: 10px; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .ticket { transition: transform .18s ease, box-shadow .18s ease; }
-  .ticket:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -16px rgba(10, 20, 40, .5); }
-}
-</style>
+<link rel="stylesheet" href="assets/style.css?v=20261019180618">
 </head>
-<body>
+<body data-page="home">
 <header class="board">
   <div class="wrap">
     <div class="top">
-      <div class="mark"><i>LL</i>Line Ledger</div>
-      <nav aria-label="Sections"><a href="#board">This week</a><a href="#record">Record</a><a href="#graded">Every pick</a><a href="#lab">Research desk</a><a href="#method">How we grade</a></nav>
+      <a class="mark" href="./"><i>LL</i>Line Ledger</a>
     </div>
-    <div class="thesis">
-      <div class="eyebrow" style="color:#aeb9cc" id="eyebrow"></div>
-      <h1>Every pick stamped. <em>Every result kept.</em></h1>
-      <p>NFL player props, priced against DraftKings and FanDuel and graded against the closing line. Each pick is time-stamped the moment the model makes it, published before kickoff, and never edited or deleted.</p>
-    </div>
-    <div class="tote" id="tote" aria-label="Record at a glance"></div>
+    <nav class="tabs" aria-label="Pages">
+      <a href="./" data-tab="home">This week</a>
+      <a href="passing.html" data-tab="passing">QB passing yards</a>
+      <a href="receptions.html" data-tab="receptions">Receptions</a>
+      <a href="method.html" data-tab="method">How it works</a>
+    </nav>
+    <div id="hero"></div>
   </div>
 </header>
-
-<main class="wrap">
-  <section id="board" aria-labelledby="board-h">
-    <div><div class="eyebrow" id="board-eyebrow">This week</div><h2 id="board-h">This week's picks</h2></div>
-    <p class="lede">QB passing yards. Lines and prices as they were when the pick was stamped; the bar shows where the line has moved since.</p>
-    <div class="tickets" id="tickets"></div>
-  </section>
-
-  <section id="record" aria-labelledby="record-h">
-    <div><div class="eyebrow">Public record</div><h2 id="record-h">The record so far</h2></div>
-    <p class="lede">Graded flat, 1 unit per pick at the price stamped, so one big bet can't flatter the numbers. Losses stay on the books.</p>
-    <div class="tablebox"><table class="cards">
-      <thead><tr><th>Picks</th><th class="num">Graded</th><th class="num">W-L-P</th><th class="num">Win %</th><th class="num">Units</th><th class="num">ROI</th><th class="num">Value vs close</th><th class="num">Beat close</th></tr></thead>
-      <tbody id="record-rows"></tbody>
-    </table></div>
-    <p class="note"><b>Value vs close</b> is what each pick was worth against the closing market with the vig removed. A pick at exactly the closing line at -110 scores about -4.5%; above zero means beating the close by more than the vig. It is the number to judge us by, more than win rate. <b>Beat close</b>: the share of picks that got a better line, or the same line at a better price, than the close.</p>
-  </section>
-
-  <section id="graded" aria-labelledby="graded-h">
-    <div><div class="eyebrow">Ledger</div><h2 id="graded-h">Every pick</h2></div>
-    <p class="note" id="pre-note"></p>
-    <div class="tablebox"><table class="cards">
-      <thead><tr><th>Wk</th><th>Player</th><th>Game</th><th>Pick</th><th>Sharp</th><th class="num">Close</th><th class="num">CLV</th><th class="num">Actual</th><th>Result</th><th>Stamped (ET)</th></tr></thead>
-      <tbody id="graded-rows"></tbody>
-    </table></div>
-  </section>
-
-  <section id="lab" aria-labelledby="lab-h">
-    <div><div class="eyebrow">Research desk &middot; not a recommendation</div><h2 id="lab-h">Receptions, tracked in the open</h2></div>
-    <p class="warn" id="lab-note"></p>
-    <div class="tablebox"><table class="cards">
-      <thead><tr><th>Wk</th><th>Player</th><th>Game</th><th>Paper pick</th><th>Sharp</th><th class="num">Model</th><th class="num">CLV</th><th>Result</th><th>Stamped (ET)</th></tr></thead>
-      <tbody id="lab-rows"></tbody>
-    </table></div>
-  </section>
-
-  <section id="method" aria-labelledby="method-h">
-    <div><div class="eyebrow">Method</div><h2 id="method-h">How we grade</h2></div>
-    <div class="steps">
-      <div><h3>Stamp</h3><p>The model prices every QB the books post. When it finds a bet, the pick, line and price are stamped and frozen. Later runs never change them, and nothing is ever removed.</p></div>
-      <div><h3>Publish</h3><p>Picks go up before kickoff. Every update to this page is a public commit, so the publish time can be checked by anyone in the page's history.</p></div>
-      <div><h3>Grade at the close</h3><p>After the game the result comes from official stats, and the pick's line and price are compared with the closing market. Every pick, win or lose.</p></div>
-    </div>
-    <div><h3 style="font-size:24px;text-transform:uppercase;margin-bottom:12px">The Sharp label</h3>
-      <dl class="labels">
-        <dt>Sharp agrees</dt><dd>When the pick was stamped, Pinnacle (the sharpest book) priced the same side as the likelier winner at our line. Model and sharp money lean the same way.</dd>
-        <dt>Sharp neutral</dt><dd>Pinnacle had it a coin flip at our line.</dd>
-        <dt>Sharp against</dt><dd>Pinnacle priced the other side as the likelier winner.</dd>
-        <dt>No line</dt><dd>Pinnacle didn't list the player.</dd>
-      </dl>
-    </div>
-  </section>
-</main>
-
+<main class="wrap" id="app"></main>
 <footer>
   <div class="wrap">
     <p><b>21+ only.</b> For information and entertainment. No pick is a guarantee, and past results do not predict future results. Bet only what you can afford to lose.</p>
@@ -229,91 +34,8 @@ footer b { color: var(--ink); }
     <p>Sportsbook names identify where a line was quoted; this site has no affiliation with any sportsbook.</p>
   </div>
 </footer>
-
-<script>
-const DATA = {"season":2026,"week":6,"since":"Oct 12, 2026","launch":"Oct 20, 2026","updated":"Mon Oct 19, 2026 1:34 PM","record":[{"label":"QB passing yards","key":"passing_yards","sub":false,"n":7,"W":4,"L":3,"P":0,"pending":0,"win":57.14285714285714,"units":0.5323,"roi":7.604285714285714,"clv_ev":-1.7014285714285715,"beat":71.42857142857143},{"label":"Posted publicly before kickoff","key":null,"sub":true,"n":0,"W":0,"L":0,"P":0,"pending":0,"win":null,"units":0.0,"roi":null,"clv_ev":null,"beat":null},{"label":"Pre-launch (private time stamps)","key":null,"sub":true,"n":7,"W":4,"L":3,"P":0,"pending":0,"win":57.14285714285714,"units":0.5323,"roi":7.604285714285714,"clv_ev":-1.7014285714285715,"beat":71.42857142857143},{"label":"Sharp agrees","key":null,"sub":true,"n":5,"W":2,"L":3,"P":0,"pending":0,"win":40.0,"units":-1.2378,"roi":-24.756,"clv_ev":-2.724,"beat":60.0},{"label":"Sharp neutral","key":null,"sub":true,"n":2,"W":2,"L":0,"P":0,"pending":0,"win":100.0,"units":1.7701,"roi":88.505,"clv_ev":0.855,"beat":100.0},{"label":"Overs","key":null,"sub":true,"n":5,"W":4,"L":1,"P":0,"pending":0,"win":80.0,"units":2.5323,"roi":50.646,"clv_ev":-2.8580000000000005,"beat":60.0},{"label":"Unders","key":null,"sub":true,"n":2,"W":0,"L":2,"P":0,"pending":0,"win":0.0,"units":-2.0,"roi":-100.0,"clv_ev":1.1899999999999997,"beat":100.0},{"label":"Receptions (paper, research desk)","key":"receptions","sub":false,"n":56,"W":31,"L":25,"P":0,"pending":3,"win":55.35714285714286,"units":3.606599999999999,"roi":6.440357142857141,"clv_ev":-2.6219642857142853,"beat":58.92857142857143}],"week_picks":[{"prop":"passing_yards","week":6,"player":"C.Stroud","game":"HOU @ JAX","kick":"Sun 10/18 9:30 AM","side":"UNDER","line":257.5,"price":-113,"book":"DraftKings","model":242.1,"win":54.39000000000001,"ev":2.52,"units":0.71,"stamped":"Wed 10/14 10:49 PM","now":255.5,"closed":true,"clv":2.0,"actual":312.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"C.Williams","game":"CHI @ ATL","kick":"Sun 10/18 1:00 PM","side":"OVER","line":225.5,"price":-114,"book":"FanDuel","model":261.0,"win":59.78,"ev":12.389999999999999,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":227.5,"closed":true,"clv":2.0,"actual":305.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"G.Smith","game":"NYJ @ NE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":221.5,"price":-113,"book":"DraftKings","model":198.1,"win":56.85,"ev":7.17,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":209.5,"closed":true,"clv":12.0,"actual":252.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"T.Huntley","game":"BAL @ CLE","kick":"Sun 10/18 1:00 PM","side":"OVER","line":161.5,"price":-114,"book":"FanDuel","model":182.3,"win":56.330000000000005,"ev":5.8999999999999995,"units":1.63,"stamped":"Sat 10/17 4:25 PM","now":169.5,"closed":true,"clv":8.0,"actual":165.0,"result":"W","state":"live","sharp":"neutral","pre":true},{"prop":"passing_yards","week":6,"player":"M.Stafford","game":"LA v ARI","kick":"Sun 10/18 4:05 PM","side":"OVER","line":279.5,"price":-114,"book":"FanDuel","model":311.4,"win":58.830000000000005,"ev":10.59,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":279.5,"closed":true,"clv":0.0,"actual":222.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"J.Allen","game":"BUF @ LV","kick":"Sun 10/18 4:25 PM","side":"OVER","line":238.5,"price":-112,"book":"DraftKings","model":255.6,"win":54.65,"ev":3.44,"units":0.96,"stamped":"Wed 10/14 10:49 PM","now":243.5,"closed":true,"clv":5.0,"actual":255.0,"result":"W","state":"live","sharp":"neutral","pre":true},{"prop":"passing_yards","week":6,"player":"P.Mahomes","game":"KC v LAC","kick":"Sun 10/18 4:25 PM","side":"OVER","line":226.5,"price":-113,"book":"DraftKings","model":246.6,"win":55.800000000000004,"ev":5.19,"units":1.46,"stamped":"Wed 10/14 10:49 PM","now":226.5,"closed":true,"clv":0.0,"actual":272.0,"result":"W","state":"live","sharp":"agrees","pre":true}],"picks":[{"prop":"passing_yards","week":6,"player":"J.Allen","game":"BUF @ LV","kick":"Sun 10/18 4:25 PM","side":"OVER","line":238.5,"price":-112,"book":"DraftKings","model":255.6,"win":54.65,"ev":3.44,"units":0.96,"stamped":"Wed 10/14 10:49 PM","now":243.5,"closed":true,"clv":5.0,"actual":255.0,"result":"W","state":"live","sharp":"neutral","pre":true},{"prop":"passing_yards","week":6,"player":"P.Mahomes","game":"KC v LAC","kick":"Sun 10/18 4:25 PM","side":"OVER","line":226.5,"price":-113,"book":"DraftKings","model":246.6,"win":55.800000000000004,"ev":5.19,"units":1.46,"stamped":"Wed 10/14 10:49 PM","now":226.5,"closed":true,"clv":0.0,"actual":272.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"M.Stafford","game":"LA v ARI","kick":"Sun 10/18 4:05 PM","side":"OVER","line":279.5,"price":-114,"book":"FanDuel","model":311.4,"win":58.830000000000005,"ev":10.59,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":279.5,"closed":true,"clv":0.0,"actual":222.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"C.Williams","game":"CHI @ ATL","kick":"Sun 10/18 1:00 PM","side":"OVER","line":225.5,"price":-114,"book":"FanDuel","model":261.0,"win":59.78,"ev":12.389999999999999,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":227.5,"closed":true,"clv":2.0,"actual":305.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"G.Smith","game":"NYJ @ NE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":221.5,"price":-113,"book":"DraftKings","model":198.1,"win":56.85,"ev":7.17,"units":2.0,"stamped":"Wed 10/14 10:49 PM","now":209.5,"closed":true,"clv":12.0,"actual":252.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"passing_yards","week":6,"player":"T.Huntley","game":"BAL @ CLE","kick":"Sun 10/18 1:00 PM","side":"OVER","line":161.5,"price":-114,"book":"FanDuel","model":182.3,"win":56.330000000000005,"ev":5.8999999999999995,"units":1.63,"stamped":"Sat 10/17 4:25 PM","now":169.5,"closed":true,"clv":8.0,"actual":165.0,"result":"W","state":"live","sharp":"neutral","pre":true},{"prop":"passing_yards","week":6,"player":"C.Stroud","game":"HOU @ JAX","kick":"Sun 10/18 9:30 AM","side":"UNDER","line":257.5,"price":-113,"book":"DraftKings","model":242.1,"win":54.39000000000001,"ev":2.52,"units":0.71,"stamped":"Wed 10/14 10:49 PM","now":255.5,"closed":true,"clv":2.0,"actual":312.0,"result":"L","state":"live","sharp":"agrees","pre":true}],"lab":[{"prop":"receptions","week":6,"player":"A.Williams","game":"WAS @ SF","kick":"Mon 10/19 8:15 PM","side":"OVER","line":2.5,"price":124,"book":"FanDuel","model":2.92,"win":47.099999999999994,"ev":5.510000000000001,"units":1.1,"stamped":"Mon 10/19 10:24 AM","now":null,"closed":false,"clv":null,"actual":null,"result":null,"state":"open","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.McCaffrey","game":"SF v WAS","kick":"Mon 10/19 8:15 PM","side":"UNDER","line":4.5,"price":-102,"book":"FanDuel","model":4.4,"win":51.76,"ev":2.48,"units":0.63,"stamped":"Mon 10/19 10:24 AM","now":null,"closed":false,"clv":null,"actual":null,"result":null,"state":"open","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"M.Evans","game":"SF v WAS","kick":"Mon 10/19 8:15 PM","side":"UNDER","line":5.5,"price":-159,"book":"FanDuel","model":4.43,"win":63.83,"ev":4.04,"units":1.57,"stamped":"Mon 10/19 10:24 AM","now":null,"closed":false,"clv":null,"actual":null,"result":null,"state":"open","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"B.Melton","game":"GB v DAL","kick":"Sun 10/18 8:20 PM","side":"UNDER","line":1.5,"price":-104,"book":"FanDuel","model":1.3,"win":55.69,"ev":9.139999999999999,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":0.5,"closed":true,"clv":1.0,"actual":0.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Watson","game":"GB v DAL","kick":"Sun 10/18 8:20 PM","side":"UNDER","line":4.5,"price":112,"book":"FanDuel","model":4.3,"win":50.980000000000004,"ev":8.07,"units":1.8,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":3.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"J.Williams","game":"DAL @ GB","kick":"Sun 10/18 8:20 PM","side":"UNDER","line":2.5,"price":120,"book":"FanDuel","model":2.62,"win":48.22,"ev":6.08,"units":1.26,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"M.Golden","game":"GB v DAL","kick":"Sun 10/18 8:20 PM","side":"UNDER","line":4.5,"price":112,"book":"FanDuel","model":3.7,"win":55.83,"ev":18.35,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":6.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"P.Strong","game":"GB v DAL","kick":"Sun 10/18 8:20 PM","side":"UNDER","line":2.5,"price":-152,"book":"FanDuel","model":1.72,"win":65.4,"ev":8.559999999999999,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":5.0,"result":"L","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"B.Bowers","game":"LV v BUF","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":6.5,"price":109,"book":"DraftKings","model":6.15,"win":52.31,"ev":9.34,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":6.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Allen","game":"KC v LAC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":1.5,"price":-149,"book":"DraftKings","model":0.28,"win":76.47,"ev":27.779999999999998,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":2.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"C.Kolar","game":"LAC @ KC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":2.5,"price":-153,"book":"DraftKings","model":1.45,"win":68.83,"ev":13.850000000000001,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":0.0,"actual":3.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"D.Kincaid","game":"BUF @ LV","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":4.5,"price":-122,"book":"FanDuel","model":3.28,"win":63.959999999999994,"ev":16.400000000000002,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":7.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"J.Royals","game":"KC v LAC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":2.5,"price":-179,"book":"FanDuel","model":1.07,"win":74.55000000000001,"ev":16.3,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"K.Mitchell","game":"LAC @ KC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":2.5,"price":-154,"book":"FanDuel","model":1.71,"win":65.59,"ev":8.23,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":0.0,"actual":0.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"K.Vidal","game":"LAC @ KC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":1.5,"price":-125,"book":"FanDuel","model":1.12,"win":61.31999999999999,"ev":10.37,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":3.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"L.McConkey","game":"LAC @ KC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":3.5,"price":-108,"book":"DraftKings","model":2.68,"win":60.85,"ev":17.21,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":3.5,"closed":true,"clv":0.0,"actual":1.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"O.Gadsden","game":"LAC @ KC","kick":"Sun 10/18 4:25 PM","side":"OVER","line":1.5,"price":-102,"book":"FanDuel","model":2.21,"win":54.85,"ev":8.6,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":3.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"T.Tucker","game":"LV v BUF","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":3.5,"price":-102,"book":"DraftKings","model":3.29,"win":53.620000000000005,"ev":6.17,"units":1.57,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":5.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"X.Worthy","game":"KC v LAC","kick":"Sun 10/18 4:25 PM","side":"UNDER","line":4.5,"price":-114,"book":"FanDuel","model":3.06,"win":64.19,"ev":20.68,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":7.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Parkinson","game":"LA v ARI","kick":"Sun 10/18 4:05 PM","side":"OVER","line":1.5,"price":-108,"book":"FanDuel","model":2.12,"win":54.08,"ev":4.38,"units":1.12,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":5.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"J.Brooks","game":"ARI @ LA","kick":"Sun 10/18 4:05 PM","side":"UNDER","line":1.5,"price":135,"book":"DraftKings","model":1.12,"win":54.56999999999999,"ev":28.24,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":2.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"K.Bourne","game":"ARI @ LA","kick":"Sun 10/18 4:05 PM","side":"UNDER","line":3.5,"price":-154,"book":"FanDuel","model":2.15,"win":69.13,"ev":14.06,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":5.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"K.Williams","game":"LA v ARI","kick":"Sun 10/18 4:05 PM","side":"OVER","line":3.5,"price":162,"book":"FanDuel","model":3.72,"win":43.26,"ev":13.34,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":3.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"P.Nacua","game":"LA v ARI","kick":"Sun 10/18 4:05 PM","side":"UNDER","line":7.5,"price":108,"book":"DraftKings","model":7.56,"win":49.6,"ev":3.16,"units":0.73,"stamped":"Thu 10/15 9:54 PM","now":7.5,"closed":true,"clv":0.0,"actual":6.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"A.Kamara","game":"NO @ NYG","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":100,"book":"FanDuel","model":2.3,"win":53.7,"ev":7.3999999999999995,"units":1.85,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"B.Allen","game":"NYJ @ NE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":-104,"book":"FanDuel","model":1.96,"win":57.89,"ev":13.469999999999999,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"B.Lance","game":"NO @ NYG","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":1.5,"price":-141,"book":"FanDuel","model":0.9,"win":65.49000000000001,"ev":11.99,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":2.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"C.Godwin","game":"TB v PIT","kick":"Sun 10/18 1:00 PM","side":"OVER","line":3.5,"price":120,"book":"FanDuel","model":4.08,"win":48.82,"ev":7.3999999999999995,"units":1.54,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Hubbard","game":"CAR @ PHI","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":100,"book":"FanDuel","model":2.34,"win":54.05,"ev":8.1,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":1.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Ridley","game":"TEN @ IND","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":134,"book":"FanDuel","model":1.96,"win":47.22,"ev":10.489999999999998,"units":1.95,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":0.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"C.Tate","game":"TEN @ IND","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":-108,"book":"FanDuel","model":4.27,"win":53.510000000000005,"ev":3.27,"units":0.82,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":6.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"D.Henry","game":"BAL @ CLE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":1.5,"price":-154,"book":"FanDuel","model":1.04,"win":64.51,"ev":6.4399999999999995,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":1.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"D.London","game":"ATL v CHI","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":6.5,"price":-131,"book":"DraftKings","model":5.59,"win":61.12,"ev":7.75,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":5.5,"closed":true,"clv":1.0,"actual":4.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"D.Pierce","game":"PHI v CAR","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":1.5,"price":137,"book":"DraftKings","model":1.33,"win":50.9,"ev":20.62,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":4.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"D.Swift","game":"CHI @ ATL","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":-116,"book":"DraftKings","model":2.23,"win":57.08,"ev":6.2700000000000005,"units":1.82,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":4.0,"result":"L","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"D.Vele","game":"NO @ NYG","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":-147,"book":"FanDuel","model":3.74,"win":61.68,"ev":3.62,"units":1.33,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":3.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"D.Washington","game":"PIT @ TB","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":-130,"book":"FanDuel","model":2.12,"win":58.919999999999995,"ev":4.29,"units":1.37,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":4.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"E.Raridon","game":"NE v NYJ","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":123,"book":"DraftKings","model":2.36,"win":53.97,"ev":20.349999999999998,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":1.0,"result":"L","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"G.Bernard","game":"PIT @ TB","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":3.5,"price":128,"book":"FanDuel","model":3.26,"win":50.06,"ev":14.14,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":11.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"G.Wilson","game":"NYJ @ NE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":6.5,"price":-135,"book":"FanDuel","model":5.34,"win":61.73,"ev":7.42,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":6.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"H.Fannin","game":"CLE v BAL","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":-114,"book":"FanDuel","model":4.08,"win":55.779999999999994,"ev":4.87,"units":1.34,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":1.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"I.Likely","game":"NYG v NO","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":5.5,"price":-141,"book":"FanDuel","model":4.14,"win":64.61,"ev":10.47,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":5.5,"closed":true,"clv":0.0,"actual":6.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"J.Coker","game":"CAR @ PHI","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":120,"book":"DraftKings","model":3.74,"win":54.89000000000001,"ev":20.76,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":6.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"J.Dotson","game":"ATL v CHI","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":1.5,"price":130,"book":"DraftKings","model":1.65,"win":47.599999999999994,"ev":9.48,"units":1.82,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":3.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"J.Jeudy","game":"CLE v BAL","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":106,"book":"FanDuel","model":2.62,"win":58.230000000000004,"ev":19.96,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"J.Johnson","game":"NO @ NYG","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":-135,"book":"DraftKings","model":3.98,"win":59.36,"ev":3.34,"units":1.12,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":0.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"J.Taylor","game":"IND v TEN","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":-102,"book":"FanDuel","model":2.48,"win":51.970000000000006,"ev":2.91,"units":0.74,"stamped":"Thu 10/15 9:54 PM","now":2.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"K.Concepcion","game":"CLE v BAL","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":4.5,"price":-124,"book":"DraftKings","model":2.9,"win":66.95,"ev":20.919999999999998,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":4.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"M.Andrews","game":"BAL @ CLE","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":3.5,"price":112,"book":"FanDuel","model":3.38,"win":50.82,"ev":7.75,"units":1.72,"stamped":"Thu 10/15 9:54 PM","now":3.5,"closed":true,"clv":0.0,"actual":1.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"M.Lemon","game":"PHI v CAR","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":-185,"book":"DraftKings","model":3.3,"win":71.74000000000001,"ev":10.549999999999999,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":1.0,"actual":3.0,"result":"W","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"N.Fant","game":"NO @ NYG","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":106,"book":"FanDuel","model":1.97,"win":49.9,"ev":2.79,"units":0.65,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":0.0,"result":"L","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"R.Bateman","game":"BAL @ CLE","kick":"Sun 10/18 1:00 PM","side":"OVER","line":1.5,"price":-161,"book":"FanDuel","model":2.55,"win":63.27,"ev":2.5,"units":1.03,"stamped":"Sat 10/17 4:25 PM","now":1.5,"closed":true,"clv":0.0,"actual":0.0,"result":"L","state":"live","sharp":"agrees","pre":true},{"prop":"receptions","week":6,"player":"R.Doubs","game":"NE v NYJ","kick":"Sun 10/18 1:00 PM","side":"OVER","line":2.5,"price":-104,"book":"DraftKings","model":3.42,"win":55.269999999999996,"ev":8.43,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":0.0,"actual":1.0,"result":"L","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"R.Stevenson","game":"NE v NYJ","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":2.5,"price":119,"book":"DraftKings","model":2.78,"win":46.64,"ev":2.1399999999999997,"units":0.44,"stamped":"Sat 10/17 4:25 PM","now":2.5,"closed":true,"clv":0.0,"actual":0.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"T.Pollard","game":"TEN @ IND","kick":"Sun 10/18 1:00 PM","side":"UNDER","line":1.5,"price":118,"book":"FanDuel","model":1.55,"win":49.58,"ev":8.09,"units":1.71,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":0.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"N.Collins","game":"HOU @ JAX","kick":"Sun 10/18 9:30 AM","side":"UNDER","line":5.5,"price":102,"book":"FanDuel","model":4.73,"win":55.86,"ev":12.839999999999998,"units":2.0,"stamped":"Thu 10/15 9:54 PM","now":5.5,"closed":true,"clv":0.0,"actual":3.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"P.Washington","game":"JAX v HOU","kick":"Sun 10/18 9:30 AM","side":"UNDER","line":4.5,"price":-110,"book":"FanDuel","model":4.29,"win":53.5,"ev":2.18,"units":0.58,"stamped":"Thu 10/15 9:54 PM","now":4.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"against","pre":true},{"prop":"receptions","week":6,"player":"T.Hunter","game":"JAX v HOU","kick":"Sun 10/18 9:30 AM","side":"OVER","line":0.5,"price":-108,"book":"FanDuel","model":1.4,"win":60.209999999999994,"ev":16.21,"units":2.0,"stamped":"Sat 10/17 4:25 PM","now":0.5,"closed":true,"clv":0.0,"actual":4.0,"result":"W","state":"live","sharp":"no line","pre":true},{"prop":"receptions","week":6,"player":"X.Hutchinson","game":"HOU @ JAX","kick":"Sun 10/18 9:30 AM","side":"OVER","line":1.5,"price":-130,"book":"FanDuel","model":2.51,"win":59.93000000000001,"ev":6.08,"units":1.95,"stamped":"Thu 10/15 9:54 PM","now":1.5,"closed":true,"clv":0.0,"actual":2.0,"result":"W","state":"live","sharp":"no line","pre":true}],"lab_note":"Replayed against 2026 weeks 3-5 prices, the receptions model showed no edge over the closing market (-3.0% value vs close). Its picks are tracked here as paper picks, in the open, and are not part of the record above until their own record says otherwise."};
-
-const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const odds = (p) => (p > 0 ? "+" : "") + p;
-const pct = (v, sign) => v == null ? "&ndash;" : (sign && v > 0 ? "+" : "") + v.toFixed(1) + "%";
-const num = (v, d, sign) => v == null ? "&ndash;" : (sign && v > 0 ? "+" : "") + v.toFixed(d);
-const cls = (v) => v == null || v === 0 ? "" : v > 0 ? "toward" : "against";
-const SHARP = { agrees: "Sharp agrees", against: "Sharp against", neutral: "Sharp neutral", "no line": "No sharp line" };
-const sharpChip = (s) => s ? `<span class="chip ${s === "no line" ? "noline" : s}">${SHARP[s] || esc(s)}</span>` : "&ndash;";
-const resultChip = (p) => {
-  if (p.result) return `<span class="chip ${p.result}">${p.result === "VOID" ? "Void" : p.result}</span>`;
-  return `<span class="chip ${p.state === "open" ? "open" : "live"}">${p.state === "open" ? "Open" : "In play"}</span>`;
-};
-const pickStr = (p) => `${p.side} ${p.line} ${odds(p.price)}`;
-
-function moveHtml(p) {
-  if (p.now == null) return `<div class="move flat">Stamped at ${p.line} &middot; no newer line yet</div>`;
-  const mv = (p.now - p.line) * (p.side === "OVER" ? 1 : -1);
-  const c = mv > 0 ? "toward" : mv < 0 ? "against" : "flat";
-  const word = mv > 0 ? "toward pick" : mv < 0 ? "against pick" : "no change";
-  const pos = Math.max(4, Math.min(96, 50 + mv * (p.prop === "receptions" ? 40 : 8)));
-  return `<div class="move ${c}"><span>${p.line} &rarr; ${p.now}${p.closed ? " close" : ""}</span><span class="lane" aria-hidden="true"><i style="left:calc(${pos}% - 5px)"></i></span><span>${mv > 0 ? "+" : ""}${mv.toFixed(1)} ${word}</span></div>`;
-}
-
-function ticket(p) {
-  return `<article class="ticket">
-    <div class="t-top">
-      <div class="t-meta"><span>${esc(p.game)}</span><span>${esc(p.kick)} ET</span></div>
-      <div class="t-player">${esc(p.player)}</div>
-      <div class="t-pick"><b>${p.side} ${p.line}</b><span>${odds(p.price)} &middot; ${esc(p.book)}</span></div>
-    </div>
-    <div class="t-body">
-      <div class="kv"><small>Model</small><b>${num(p.model, 1)}</b></div>
-      <div class="kv"><small>Win %</small><b>${pct(p.win)}</b></div>
-      <div class="kv"><small>EV</small><b>${pct(p.ev, true)}</b></div>
-      <div class="kv"><small>Stake</small><b>${num(p.units, 1)}u</b></div>
-      <div class="kv" style="grid-column: span 2"><small>Result</small><b>${p.actual != null ? `${p.actual} yds &middot; ` : ""}${p.result || (p.state === "open" ? "open" : "in play")}</b></div>
-      ${moveHtml(p)}
-    </div>
-    <div class="t-foot"><span class="stamp">Stamped ${esc(p.stamped)} ET${p.pre ? `<br><span class="prenote">pre-launch: not posted publicly</span>` : ""}</span>${sharpChip(p.sharp)}</div>
-  </article>`;
-}
-const stampCell = (p) => `${esc(p.stamped)}${p.pre ? ` <span class="chip pre">pre-launch</span>` : ""}`;
-const td = (label, html, c = "") => `<td class="${c}" data-l="${label}">${html}</td>`;
-
-function render() {
-  const d = DATA;
-  document.getElementById("eyebrow").textContent = `NFL player props · ${d.season} · public record since ${d.since}`;
-  const r = d.record.find((x) => x.key === "passing_yards") || { n: 0 };
-  document.getElementById("tote").innerHTML = [
-    [d.week_picks.length, `picks in week ${d.week ?? "-"}`],
-    [r.n ? `${r.W}-${r.L}${r.P ? "-" + r.P : ""}` : "0-0", "passing-yards record"],
-    [r.n ? num(r.units, 2, true) + "u" : "&ndash;", "units, flat stakes"],
-    [r.clv_ev != null ? pct(r.clv_ev, true) : "&ndash;", "value vs close"],
-  ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join("");
-
-  document.getElementById("board-eyebrow").textContent = d.week ? `Week ${d.week} board` : "Board";
-  document.getElementById("tickets").innerHTML = d.week_picks.length ? d.week_picks.map(ticket).join("")
-    : `<div class="empty">No picks posted yet${d.week ? ` for week ${d.week}` : ""}. Picks go up when the books post lines and the model finds value, usually Wednesday or Thursday.</div>`;
-
-  document.getElementById("record-rows").innerHTML = d.record.map((x) => `<tr class="${x.sub ? "sub" : ""}">
-    ${td("Picks", esc(x.label), "lead")}${td("Graded", `${x.n}${x.pending ? ` <span class="note">+${x.pending} open</span>` : ""}`, "num")}
-    ${td("W-L-P", `${x.W}-${x.L}-${x.P}`, "num")}${td("Win %", x.n ? pct(x.win) : "&ndash;", "num")}
-    ${td("Units", x.n ? num(x.units, 2, true) + "u" : "&ndash;", "num " + cls(x.units))}${td("ROI", pct(x.roi, true), "num " + cls(x.roi))}
-    ${td("Value vs close", pct(x.clv_ev, true), "num " + cls(x.clv_ev))}${td("Beat close", x.beat == null ? "&ndash;" : x.beat.toFixed(0) + "%", "num")}</tr>`).join("")
-    || `<tr><td colspan="8" class="note span">The record starts ${esc(d.since)}.</td></tr>`;
-
-  const row = (p) => `<tr>${td("Week", p.week, "num")}${td("Player", esc(p.player), "lead")}${td("Game", esc(p.game))}${td("Pick", `${pickStr(p)} <span class="note">${esc(p.book)}</span>`, "mono")}
-    ${td("Sharp", sharpChip(p.sharp))}${td("Close", p.closed && p.now != null ? p.now : "&ndash;", "num")}
-    ${td("CLV", p.clv == null ? "&ndash;" : num(p.clv, 1, true), "num " + cls(p.clv))}${td("Actual", p.actual ?? "&ndash;", "num")}
-    ${td("Result", resultChip(p))}${td("Stamped (ET)", stampCell(p), "mono wide")}</tr>`;
-  document.getElementById("graded-rows").innerHTML = d.picks.map(row).join("")
-    || `<tr><td colspan="10" class="note span">No picks yet. The first ones will appear here, and stay here.</td></tr>`;
-  document.getElementById("pre-note").innerHTML = d.picks.some((p) => p.pre) ? `<span class="chip pre">pre-launch</span> picks were made by the same model and time-stamped in our private ledger when made, but were not posted publicly before kickoff, so their timing can't be checked here. From ${esc(d.launch)} on, every pick is posted before kickoff.` : "";
-
-  document.getElementById("lab-note").textContent = d.lab_note;
-  document.getElementById("lab-rows").innerHTML = d.lab.map((p) => `<tr>${td("Week", p.week, "num")}${td("Player", esc(p.player), "lead")}${td("Game", esc(p.game))}${td("Paper pick", pickStr(p), "mono")}${td("Sharp", sharpChip(p.sharp))}
-    ${td("Model", num(p.model, 2), "num")}${td("CLV", p.clv == null ? "&ndash;" : num(p.clv, 1, true), "num " + cls(p.clv))}
-    ${td("Result", resultChip(p))}${td("Stamped (ET)", stampCell(p), "mono wide")}</tr>`).join("")
-    || `<tr><td colspan="9" class="note span">No paper picks yet.</td></tr>`;
-  document.getElementById("updated").textContent = `Last updated ${d.updated} ET.`;
-}
-render();
-</script>
+<noscript><p class="wrap">This page needs JavaScript to show the picks.</p></noscript>
+<script src="data.js?v=20261019180618"></script>
+<script src="assets/app.js?v=20261019180618"></script>
 </body>
 </html>

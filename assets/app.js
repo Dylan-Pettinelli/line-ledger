@@ -19,8 +19,50 @@
   document.querySelectorAll(".tabs a").forEach((a) => { if (a.dataset.tab === page) a.setAttribute("aria-current", "page"); });
   $("updated").textContent = `Last updated ${D.updated} ET.`;
 
+  /* light / dark switch (remembered on this device) */
+  $("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("ll-theme", root.dataset.theme); } catch (e) {}
+  });
+
+  /* kickoff countdowns on open tickets */
+  function countdowns() {
+    document.querySelectorAll("[data-kick]").forEach((el) => {
+      const ms = new Date(el.dataset.kick) - Date.now();
+      if (ms <= 0) { el.textContent = "kicked off"; return; }
+      const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+      el.textContent = `kicks off in ${d ? d + "d " + h + "h" : h ? h + "h " + (m % 60) + "m" : (m % 60) + "m"}`;
+    });
+  }
+  setInterval(countdowns, 30000);
+
+  /* share a ticket: link to its page, season and week, scrolled to it */
+  const pageOf = (p) => p.prop === "receptions" ? "receptions.html" : "passing.html";
+  const linkTo = (p) => new URL(`${pageOf(p)}?season=${p.season}&week=${p.week}#${p.serial}`, location.href).href;
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("button.share");
+    if (!b) return;
+    const p = allPicksById[b.dataset.serial];
+    const url = linkTo(p), text = `${p.player} ${p.side} ${p.line} (${p.price > 0 ? "+" : ""}${p.price}) - Line Ledger`;
+    try {
+      if (navigator.share) await navigator.share({ title: text, url });
+      else { await navigator.clipboard.writeText(url); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Share"), 1600); }
+    } catch (err) {}
+  });
+  function revealHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id && document.getElementById(id);
+    if (!el) return;
+    el.closest("details")?.setAttribute("open", "");
+    el.scrollIntoView({ block: "center" });
+    el.classList.add("hit");
+  }
+
   /* ------------------------------------------------------------------ season / week picker */
   const allPicks = PROPS.flatMap((k) => D.props[k].picks);
+  const allPicksById = Object.fromEntries(allPicks.map((p) => [p.serial, p]));
   const seasons = [...new Set(allPicks.map((p) => p.season))].sort((a, b) => b - a);
   const weeksOf = (season, picks = allPicks) => [...new Set(picks.filter((p) => p.season === season).map((p) => p.week))].sort((a, b) => b - a);
   const qs = new URLSearchParams(location.search);
@@ -62,14 +104,15 @@
     return `<span class="barcode" aria-hidden="true" style="width:${x}px;background:linear-gradient(90deg,${stops.join(",")})"></span>`;
   }
 
+  const kickSpan = (p) => p.state === "open" && p.kick_utc ? `<span class="countdown" data-kick="${p.kick_utc}">closes at kickoff</span>` : `<span>closes at kickoff</span>`;
   function lane(p, unit) {
-    if (p.now == null) return `<div class="clv-f"><span>Stamped at <b>${p.line}</b></span><span>no newer line yet</span></div>`;
+    if (p.now == null) return `<div class="clv-f"><span>Stamped at <b>${p.line}</b></span>${p.result ? "<span>no closing line</span>" : kickSpan(p)}</div>`;
     const mv = (p.now - p.line) * (p.side === "OVER" ? 1 : -1);
     const w = Math.min(50, Math.abs(mv) * (p.prop === "receptions" ? 50 : 4));
     const fill = mv > 0 ? `<i class="up" style="left:50%;width:${w}%"></i>` : mv < 0 ? `<i class="down" style="left:${50 - w}%;width:${w}%"></i>` : "";
     return `<div class="lane"><span>${p.line}</span><span class="bar" aria-hidden="true">${fill}</span><span>${p.now}</span></div>
       <div class="clv-f"><span>${mv ? `Moved <b class="${tone(mv)}">${sgn(mv)}${mv.toFixed(1)} ${unit}</b> ${mv > 0 ? "our way" : "against"}` : "Line didn't move"}</span>
-      ${p.closed ? `<span>Beat close <b class="${p.beat ? "up" : "down"}">${p.beat ? "yes" : "no"}</b></span>` : `<span>closes at kickoff</span>`}</div>`;
+      ${p.closed ? `<span>Beat close <b class="${p.beat ? "up" : "down"}">${p.beat ? "yes" : "no"}</b></span>` : kickSpan(p)}</div>`;
   }
 
   function details(p, P) {
@@ -92,7 +135,7 @@
     const final = p.result && p.result !== "VOID" && p.actual != null
       ? `<div class="final ${won}">Final <b>${p.actual} ${P.unit}</b> &middot; ${p.margin ? `${Math.abs(p.margin).toFixed(1)} ${p.margin > 0 ? "over" : "under"} the line` : "right on the line"}</div>`
       : p.result === "VOID" ? `<div class="final">Didn't play &middot; bet refunded</div>` : "";
-    return `<article class="ticket${p.result ? " graded" : ""}">
+    return `<article class="ticket${p.result ? " graded" : ""}" id="${esc(p.serial)}">
       <div class="t-top">
         <div class="t-meta"><span>${esc(p.game)} &middot; ${esc(p.kick)}</span>${sharpChip(p.sharp)}</div>
         <div class="t-player">${esc(p.player)}</div>
@@ -109,7 +152,7 @@
       ${details(p, P)}
       <div class="stub">
         <div><span class="serial">No. ${esc(p.serial)}</span><span class="when">Stamped ${esc(p.stamped)} ET</span></div>
-        <div class="stub-r">${p.pre ? `<span class="chip pre">pre-launch</span>` : P.paper ? `<span class="chip paper">paper</span>` : ""}${barcode(p.serial)}</div>
+        <div class="stub-r">${p.pre ? `<span class="chip pre">pre-launch</span>` : P.paper ? `<span class="chip paper">paper</span>` : ""}<button type="button" class="share" data-serial="${esc(p.serial)}" aria-label="Share this pick">Share</button>${barcode(p.serial)}</div>
       </div>
     </article>`;
   }
@@ -141,6 +184,23 @@
         <td class="num ${tone(x.units)}">${x.n ? num(x.units, 2, true) : "&ndash;"}</td><td class="num opt ${tone(x.roi)}">${pct(x.roi)}</td>
         <td class="num key ${tone(x.clv_ev)}">${pct(x.clv_ev)}</td><td class="num opt">${x.beat == null ? "&ndash;" : x.beat.toFixed(0) + "%"}</td></tr>`).join("")}
       </tbody></table></div>`;
+  }
+
+  /* units over time: cumulative flat-unit result of graded picks, in the order they were stamped */
+  function chart(P) {
+    const g = P.picks.filter((p) => p.pl != null).sort((a, b) => a.serial < b.serial ? -1 : 1);
+    if (g.length < 3) return "";
+    let run = 0;
+    const pts = [0, ...g.map((p) => (run += p.pl))];
+    const W = 640, H = 170, pad = 8, lo = Math.min(0, ...pts), hi = Math.max(0, ...pts), span = hi - lo || 1;
+    const x = (i) => pad + (i / (pts.length - 1)) * (W - 2 * pad), y = (v) => pad + (1 - (v - lo) / span) * (H - 2 * pad);
+    const path = pts.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    const last = pts[pts.length - 1];
+    return `<figure class="chart"><figcaption><span>Units over time <span class="muted">(${g.length} graded, flat 1u)</span></span><b class="${tone(last)}">${num(last, 2, true)}u</b></figcaption>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative units: ${num(last, 2, true)} after ${g.length} graded picks">
+        <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" class="zero"/>
+        <path d="${path}" class="${last >= 0 ? "upl" : "downl"}" vector-effect="non-scaling-stroke"/>
+      </svg></figure>`;
   }
 
   function weekHead(P, season, w) {
@@ -179,6 +239,7 @@
           <p class="lede">Win-loss swings with luck for hundreds of bets. The closing line is the market's sharpest price; consistently getting a better number than it is the clearest sign of a real edge. Every ticket shows where the line went after the pick and what the pick was worth against the close.</p>
           <a class="more" href="method.html">How we grade &rarr;</a></section>`;
       wirePickers(draw);
+      countdowns();
     };
     function board() {
       const wk = (X) => X ? X.picks.filter((p) => p.season === state.season && p.week === state.week) : [];
@@ -202,6 +263,8 @@
     const P = D.props[key];
     if (!P) { $("app").innerHTML = `<div class="empty">Nothing here yet.</div>`; return; }
     hero(`${P.paper ? "Research desk &middot; paper picks" : "The record"} &middot; since ${D.since}`, P.label, P.blurb, tote(P.record, P));
+    const linked = allPicksById[decodeURIComponent(location.hash.slice(1))];
+    if (linked && linked.prop === key) { state.season = linked.season; state.week = linked.week; }
     if (state.week == null) state.week = "all";
     const filters = [
       ["all", "All", () => true], ["open", "Open", (p) => !p.result], ["W", "Won", (p) => p.result === "W"], ["L", "Lost", (p) => p.result === "L"],
@@ -219,10 +282,12 @@
       $("chips").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { active = b.dataset.k; draw(); }));
       $("picks").innerHTML = weeks.length ? weeks.map((w) => `<div class="weekgroup">${weekHead(P, state.season, w)}${tickets(shown.filter((p) => p.week === w))}</div>`).join("")
         : `<div class="empty">No picks match.</div>`;
+      countdowns();
     };
     $("app").innerHTML = `
       <section><div class="head"><div><div class="eyebrow">Graded flat, 1 unit per pick &middot; all seasons</div><h2>Record</h2></div></div>
         ${recordTable(P.record)}
+        ${chart(P)}
         ${P.record.some((r) => r.label === "Pre-launch") ? `<p class="note"><span class="chip pre">pre-launch</span> picks (week 6) were made by the same model and time-stamped in our private ledger, but not posted publicly before kickoff. From ${esc(D.launch)} on, every pick is posted before kickoff.</p>` : ""}</section>
       <section><div class="head"><div><div class="eyebrow">Newest first</div><h2>Every pick</h2></div><div id="pk">${pickers(P.picks, true)}</div></div>
         <div class="filters" id="chips" role="group" aria-label="Filter picks"></div>
@@ -230,6 +295,7 @@
     function repick() { $("pk").innerHTML = pickers(P.picks, true); wirePickers(repick); active = "all"; draw(); }
     wirePickers(repick);
     draw();
+    revealHash();
   }
 
   function method() {

@@ -189,6 +189,7 @@
     if (p.quotes && p.quotes.length) rows.push(["Lines when stamped", p.quotes.map((q) => `${esc(q.book)} ${q.line} ${odds(q.over)}/${odds(q.under)}`).join("<br>")]);
     if (p.sharp_line != null) rows.push(["Pinnacle when stamped", `${p.sharp_line} ${odds(p.sharp_over)}/${odds(p.sharp_under)}`]);
     if (p.market != null) rows.push(["Market's number", `${num(p.market, P.dec)} <span class="muted">vs model ${num(p.model, P.dec)}</span>`]);
+    if (p.playable_to != null) rows.push(["Playable to", `${odds(p.playable_to)} <span class="muted">at ${p.line}: the worst price that still clears the ${D.min_ev ?? 2}% value bar</span>`]);
     rows.push(["Kickoff", `${esc(p.kick)} ET`]);
     if (p.closed && p.clv != null) rows.push(["Closing line", `${p.now} <span class="muted">(${sgn(p.clv)}${p.clv.toFixed(1)} ${P.unit} CLV)</span>`]);
     return `<details class="drawer"><summary>Ticket details</summary><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></details>`;
@@ -211,6 +212,7 @@
         <div class="t-player">${esc(p.player)}</div>
         <div class="t-pick"><span><b>${p.side} ${p.line}</b><small>${odds(p.price)} ${esc(p.book)}</small></span>
           ${p.result ? "" : `<span class="res ${p.state}">${p.state === "open" ? "OPEN" : "IN PLAY"}</span>`}</div>
+        ${!p.result && p.state === "open" && p.playable_to != null ? `<div class="final">Playable to <b>${odds(p.playable_to)}</b> at ${p.line}</div>` : ""}
         ${final}
         ${p.result ? `<div class="seal ${p.result}" aria-label="${SEAL[p.result]}">${SEAL[p.result]}</div>` : ""}
       </div>
@@ -408,6 +410,7 @@
           <dt>Value vs close</dt><dd>What the pick was worth against the closing market, with the bookmaker's cut removed. A pick at exactly the closing line at -110 scores about -4.5%; above 0% means beating the close by more than the cut. Over a few hundred picks, this is the most reliable sign of a real edge, far more than win rate.</dd>
           <dt>Beat the close</dt><dd>The pick got a better line than the close, or the same line at a better price. A pick can beat the close on the line and still score below 0% on value, if its price was worse than the closing price.</dd>
           <dt>Line moved</dt><dd>How far the line moved from the pick to the close (or to now, before kickoff). Green means toward the pick: the market came to us.</dd>
+          <dt>Playable to</dt><dd>The worst price at the stamped line where the pick still clears our value bar (expected value of at least ${D.min_ev ?? 2}%). If your book offers the same line at that price or better, the pick still holds; worse than that, pass.</dd>
           <dt>Units</dt><dd>The record is graded flat, 1 unit per pick at the price stamped, so one big bet can't flatter the numbers. The stake on each ticket is a suggestion in units, where 1u = 1% of a bankroll (quarter-Kelly, capped at 2u).</dd>
           <dt>Ticket details</dt><dd>Tap a ticket's details to see every book's line when the pick was stamped, Pinnacle's line at the same moment, and the market's own number next to the model's.</dd>
         </dl></section>

@@ -101,7 +101,7 @@ section { display: grid; gap: 18px; }
 .clv { padding: 14px 16px 12px; display: grid; gap: 10px; }
 .clv-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .clv-h small { font: 600 11px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.clv-h b { font: 600 22px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.clv-h b { font: 600 22px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .lane { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font: 500 13px/1 var(--mono); }
 .lane .bar { height: 6px; background: var(--soft); border-radius: 6px; position: relative; }
 .lane .bar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
@@ -242,6 +242,46 @@ h2 .count { font: 600 .55em/1 var(--mono); vertical-align: middle; padding: 4px 
   border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
 .mini:hover { border-color: var(--ink); }
 .mini .mono { font-weight: 600; font-size: 15px; white-space: nowrap; }
+
+/* ---- team colors: badges + a band across the top of each ticket */
+.tm { display: inline-grid; place-items: center; min-width: 34px; padding: 3px 6px 4px; border-radius: 4px; background: var(--c1);
+  box-shadow: inset 0 -3px 0 var(--c2); font: 700 11.5px/1 var(--mono); letter-spacing: .03em; }
+.at { font-style: normal; margin: 0 5px; color: var(--muted); font-size: 12px; }
+.t-game { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 0; }
+.t-game > span:last-child { margin-left: 8px; }
+.ticket { background: linear-gradient(90deg, var(--c1, var(--rule)) 0 64%, var(--c2, var(--rule)) 64%) top / 100% 5px no-repeat, var(--ticket); }
+.ticket .t-top { padding-top: 17px; }
+.gteams { display: inline-flex; align-items: center; }
+.gamegroup .weekhead h3 .tm { font-size: 14px; padding: 5px 8px 6px; min-width: 44px; }
+
+/* ---- games strip */
+.gstrip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 1px 4px; scroll-snap-type: x proximity; }
+.gstrip::-webkit-scrollbar { display: none; }
+.gchip { flex: none; scroll-snap-align: start; display: grid; gap: 6px; text-decoration: none; background: var(--ticket); border: 1px solid var(--rule);
+  border-radius: 10px; padding: 9px 12px; }
+.gchip:hover { border-color: var(--ink); }
+.gmeta { display: flex; justify-content: space-between; gap: 12px; font: 500 11.5px/1.2 var(--mono); color: var(--muted); }
+.live { display: inline-flex; align-items: center; gap: 5px; color: var(--down); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+@media (prefers-reduced-motion: no-preference) { .live i { animation: blink 1.4s ease-in-out infinite; } @keyframes blink { 50% { opacity: .25; } } }
+
+/* ---- carousel (home page, when more picks are open than fit) */
+.carousel { display: grid; gap: 10px; min-width: 0; }
+.ctrack { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 32px) / 3); column-gap: 16px; overflow-x: auto;
+  scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 1px 6px; overscroll-behavior-x: contain; }
+.ctrack::-webkit-scrollbar { display: none; }
+.cslide { scroll-snap-align: start; min-width: 0; display: grid; }
+.cbar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.ccount { font-size: 12.5px; color: var(--muted); margin-right: auto; }
+.cbtn { font: 600 13px/1 var(--body); border: 1px solid var(--rule); background: var(--ticket); color: var(--ink); padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+.cbtn:hover { border-color: var(--ink); }
+.carousel.still .cbar { display: none; }
+.morecard { display: grid; place-content: center; text-align: center; gap: 8px; text-decoration: none; min-height: 220px; }
+.morecard b { font: 800 56px/1 var(--display); }
+.morecard span { color: var(--muted); }
+.morecard .more { justify-self: center; color: var(--ink); }
+@media (max-width: 900px) { .ctrack { grid-auto-columns: calc((100% - 16px) / 2); } }
+@media (max-width: 680px) { .ctrack { grid-auto-columns: 93%; column-gap: 10px; } .openstrip { padding-inline: 12px; } }
 
 footer { border-top: 1px solid var(--rule); }
 footer .wrap { padding-block: 24px 40px; display: grid; gap: 8px; font-size: 13px; color: var(--muted); }

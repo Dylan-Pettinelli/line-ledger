@@ -63,6 +63,11 @@
   /* ------------------------------------------------------------------ season / week picker */
   const allPicks = PROPS.flatMap((k) => D.props[k].picks);
   const allPicksById = Object.fromEntries(allPicks.map((p) => [p.serial, p]));
+  // open = not graded yet (before kickoff, or being played / waiting for official stats), soonest kickoff first,
+  // the record's prop before the paper desk
+  const openPicks = allPicks.filter((p) => !p.result)
+    .sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "") || (a.prop === "passing_yards" ? -1 : 1) - (b.prop === "passing_yards" ? -1 : 1));
+  if (openPicks.length) { const b = $("open-count"); b.textContent = openPicks.length; b.hidden = false; }
   const seasons = [...new Set(allPicks.map((p) => p.season))].sort((a, b) => b - a);
   const weeksOf = (season, picks = allPicks) => [...new Set(picks.filter((p) => p.season === season).map((p) => p.week))].sort((a, b) => b - a);
   const qs = new URLSearchParams(location.search);
@@ -104,7 +109,8 @@
     return `<span class="barcode" aria-hidden="true" style="width:${x}px;background:linear-gradient(90deg,${stops.join(",")})"></span>`;
   }
 
-  const kickSpan = (p) => p.state === "open" && p.kick_utc ? `<span class="countdown" data-kick="${p.kick_utc}">closes at kickoff</span>` : `<span>closes at kickoff</span>`;
+  const kickSpan = (p) => p.state !== "open" ? `<span>close locked &middot; posts after the game</span>`
+    : p.kick_utc ? `<span class="countdown" data-kick="${p.kick_utc}">closes at kickoff</span>` : `<span>closes at kickoff</span>`;
   function lane(p, unit) {
     if (p.now == null) return `<div class="clv-f"><span>Stamped at <b>${p.line}</b></span>${p.result ? "<span>no closing line</span>" : kickSpan(p)}</div>`;
     const mv = (p.now - p.line) * (p.side === "OVER" ? 1 : -1);
@@ -130,6 +136,7 @@
     const mv = p.now == null ? null : (p.now - p.line) * (p.side === "OVER" ? 1 : -1);
     const head = p.closed
       ? `<small>Closing line value</small><b class="${tone(p.clv_ev)}">${pct(p.clv_ev)}</b>`
+      : p.state !== "open" ? `<small>Closing line value</small><b class="muted">pending</b>`
       : `<small>Line since the pick</small><b class="${tone(mv)}">${mv == null ? "&ndash;" : `${sgn(mv)}${mv.toFixed(1)} ${P.unit}`}</b>`;
     const won = p.result === "W" ? "up" : p.result === "L" ? "down" : "";
     const final = p.result && p.result !== "VOID" && p.actual != null
@@ -203,6 +210,32 @@
       </svg></figure>`;
   }
 
+  /* a line chart of any series (index -> value) with a dashed zero line */
+  function lineChart(vals, caption, last, fmt) {
+    if (vals.length < 3) return "";
+    const W = 640, H = 170, pad = 8, lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), span = hi - lo || 1;
+    const x = (i) => pad + (i / (vals.length - 1)) * (W - 2 * pad), y = (v) => pad + (1 - (v - lo) / span) * (H - 2 * pad);
+    const path = vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    return `<figure class="chart"><figcaption><span>${caption}</span><b class="${tone(last)}">${fmt(last)}</b></figcaption>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${caption.replace(/<[^>]+>/g, "")}: ${fmt(last)}">
+        <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" class="zero"/>
+        <path d="${path}" class="${last >= 0 ? "upl" : "downl"}" vector-effect="non-scaling-stroke"/>
+      </svg></figure>`;
+  }
+
+  /* open picks: everything not graded yet, grouped by kickoff day */
+  function openBoard(list = openPicks) {
+    if (!list.length) return `<div class="empty">No open picks right now. New picks usually go up Wednesday or Thursday, once the books post lines and the model finds value.</div>`;
+    const shown = list;
+    const days = [];
+    shown.forEach((p) => {
+      const day = (p.kick || "").split(" ").slice(0, 2).join(" ");
+      if (!days.length || days[days.length - 1].day !== day) days.push({ day, picks: [] });
+      days[days.length - 1].picks.push(p);
+    });
+    return days.map((d) => `<div class="weekgroup"><div class="weekhead"><h3>${esc(d.day)}</h3><span class="mono">${d.picks.length} open</span></div>${tickets(d.picks)}</div>`).join("");
+  }
+
   function weekHead(P, season, w) {
     const r = P.weeks[`${season}-${w}`];
     const bits = r && r.n ? [`<b>${wl(r)}</b>`, `<b class="${tone(r.units)}">${num(r.units, 2, true)}u</b>`,
@@ -231,7 +264,12 @@
     const P = D.props.passing_yards, R = D.props.receptions;
     const order = { agrees: 0, neutral: 1, "no line": 2, against: 3 };
     const draw = () => {
+      const nOpen = openPicks.length, firstN = 3;
       $("app").innerHTML = `
+        ${nOpen ? `<section class="openstrip"><div class="head"><div><div class="eyebrow">Live &middot; not graded yet</div><h2>Open now <span class="count">${nOpen}</span></h2></div>
+          <a class="more" href="open.html">All open picks &rarr;</a></div>
+          ${tickets(openPicks.slice(0, firstN))}
+          ${nOpen > firstN ? `<a class="more" href="open.html">See all ${nOpen} open picks &rarr;</a>` : ""}</section>` : ""}
         <div class="pickbar">${pickers(allPicks, false)}</div>
         ${board()}
         ${notify()}
@@ -332,7 +370,76 @@
         </dl></section>`;
   }
 
-  if (page === "home") home();
+  function openPage() {
+    const nP = openPicks.filter((p) => p.prop === "passing_yards").length, nR = openPicks.length - nP;
+    hero("Live &middot; not graded yet", `Open now <em>${openPicks.length}</em>`,
+      openPicks.length ? `${nP} QB passing-yards pick${nP === 1 ? "" : "s"}${nR ? ` and ${nR} receptions paper pick${nR === 1 ? "" : "s"}` : ""} still to be settled, soonest kickoff first. Before kickoff each ticket shows where the line has gone since the pick; once the game starts, the closing line is locked in.`
+        : "Nothing open right now.");
+    const kinds = [["all", "All", () => true], ["passing_yards", "QB passing yards", (p) => p.prop === "passing_yards"],
+      ["receptions", "Receptions (paper)", (p) => p.prop === "receptions"], ["pre", "Before kickoff", (p) => p.state === "open"],
+      ["live", "In play", (p) => p.state !== "open"]].filter(([k, , f]) => k === "all" || openPicks.some(f));
+    let active = "all";
+    const draw = () => {
+      const f = kinds.find((k) => k[0] === active)[2];
+      $("chips").innerHTML = kinds.map(([k, label, g]) => `<button type="button" data-k="${k}" aria-pressed="${k === active}">${label}<span>${openPicks.filter(g).length}</span></button>`).join("");
+      $("chips").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { active = b.dataset.k; draw(); }));
+      $("list").innerHTML = openBoard(openPicks.filter(f));
+      countdowns();
+    };
+    $("app").innerHTML = `<section>${openPicks.length ? `<div class="filters" id="chips" role="group" aria-label="Filter open picks"></div>` : ""}<div id="list" class="weekgroups">${openBoard()}</div></section>`;
+    if (openPicks.length) draw();
+    countdowns();
+  }
+
+  function clvPage() {
+    hero("The scoreboard", "Closing line <em>value</em>",
+      "Did we get a better number than the market's final price? Over hundreds of picks, that is the clearest sign of a real edge, far more than win-loss. Here it is for every graded pick, nothing left out.");
+    const cards = PROPS.map((k) => {
+      const P = D.props[k], r = P.record[0] || {};
+      const cells = [
+        ["Value vs close", pct(r.clv_ev), tone(r.clv_ev), "what each pick was worth against the closing price, vig removed"],
+        ["Beat the close", r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%", "", "better line, or same line at a better price"],
+        ["Avg line move", r.clv == null ? "&ndash;" : `${sgn(r.clv)}${r.clv.toFixed(1)} ${P.unit}`, tone(r.clv), "from the pick to the close"],
+        ["Moved our way", r.toward == null ? "&ndash;" : r.toward.toFixed(0) + "%", "", `of the ${r.n_moved || 0} lines that moved`],
+      ];
+      return `<article class="clvcard"><div class="sb-h2"><span>${esc(P.label)}</span>${P.paper ? `<span class="chip paper">paper</span>` : `<span class="chip pre">the record</span>`}</div>
+        <div class="clvgrid">${cells.map(([h, v, c, s]) => `<div><small>${h}</small><b class="${c}">${v}</b><span>${s}</span></div>`).join("")}</div>
+        <p class="note">${r.n_clv || 0} picks with a closing line${r.pending ? ` &middot; ${r.pending} still open` : ""}</p></article>`;
+    }).join("");
+    const charts = PROPS.map((k) => {
+      const P = D.props[k];
+      const g = P.picks.filter((p) => p.clv_ev != null).sort((a, b) => (a.serial < b.serial ? -1 : 1));
+      let s = 0;
+      const run = g.map((p, i) => (s += p.clv_ev) / (i + 1));
+      return lineChart(run, `${esc(P.label)} <span class="muted">running value vs close, ${g.length} picks</span>`, run[run.length - 1], (v) => pct(v));
+    }).join("");
+    const byWeek = PROPS.flatMap((k) => Object.entries(D.props[k].weeks).map(([key, r]) => ({ k, key, r })))
+      .sort((a, b) => b.key.localeCompare(a.key, undefined, { numeric: true }) || (a.k < b.k ? -1 : 1));
+    const bySharp = PROPS.flatMap((k) => D.props[k].record.filter((r) => /^Sharp|^No sharp/.test(r.label)).map((r) => ({ k, r })));
+    const row = (label, r, P) => `<tr><td>${label}</td><td class="num opt">${r.n_clv || 0}</td><td class="num key ${tone(r.clv_ev)}">${pct(r.clv_ev)}</td>
+      <td class="num">${r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%"}</td><td class="num opt ${tone(r.clv)}">${r.clv == null ? "&ndash;" : sgn(r.clv) + r.clv.toFixed(1) + " " + P.unit}</td></tr>`;
+    const table = (rows) => `<div class="tablebox"><table><thead><tr><th>Picks</th><th class="num opt">Closes</th><th class="num key">Value vs close</th><th class="num">Beat close</th><th class="num opt">Avg move</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    const graded = allPicks.filter((p) => p.clv_ev != null).sort((a, b) => b.clv_ev - a.clv_ev);
+    const mini = (p) => `<a class="mini" href="${pageOf(p)}?season=${p.season}&week=${p.week}#${p.serial}">
+      <span><b>${esc(p.player)}</b> ${p.side} ${p.line} <span class="muted">${odds(p.price)} &middot; ${p.prop === "receptions" ? "rec" : "pass yds"} &middot; wk ${p.week}</span></span>
+      <span class="mono ${tone(p.clv_ev)}">${pct(p.clv_ev)}</span></a>`;
+    $("app").innerHTML = `
+      <section><div class="clvcards">${cards}</div></section>
+      ${charts ? `<section><div><div class="eyebrow">Is the edge holding?</div><h2>Over time</h2></div>
+        <p class="lede">The running average of value vs close, pick by pick. Early on it swings; what matters is where it settles.</p><div class="charts">${charts}</div></section>` : ""}
+      <section><div><div class="eyebrow">Week by week</div><h2>By week</h2></div>
+        ${table(byWeek.map(({ k, key, r }) => row(`Week ${key.split("-")[1]} <span class="muted">${key.split("-")[0]} &middot; ${D.props[k].paper ? "receptions" : "pass yds"}</span>`, r, D.props[k])).join(""))}</section>
+      ${bySharp.length ? `<section><div><div class="eyebrow">Model + sharp money</div><h2>By Sharp label</h2></div>
+        <p class="lede">Do picks that Pinnacle agreed with get better closing value? This is where that question gets answered.</p>
+        ${table(bySharp.map(({ k, r }) => row(`${esc(r.label)} <span class="muted">${D.props[k].paper ? "receptions" : "pass yds"}</span>`, r, D.props[k])).join(""))}</section>` : ""}
+      ${graded.length ? `<section><div><div class="eyebrow">Tap one to see its ticket</div><h2>Best and worst closes</h2></div>
+        <div class="minis"><div><h3>Best</h3>${graded.slice(0, 5).map(mini).join("")}</div><div><h3>Worst</h3>${graded.slice(-5).reverse().map(mini).join("")}</div></div></section>` : ""}
+      <section><a class="more" href="method.html">How value vs close is worked out &rarr;</a></section>`;
+  }
+
+  if (page === "open") openPage();
+  else if (page === "clv") clvPage();
+  else if (page === "home") home();
   else if (page === "passing") propPage("passing_yards");
   else if (page === "receptions") propPage("receptions");
   else method();

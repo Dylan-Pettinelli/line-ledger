@@ -217,6 +217,32 @@ dl.defs dd { margin: 0; color: var(--muted); max-width: 70ch; }
 .chart path { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
 .chart path.upl { stroke: var(--up); } .chart path.downl { stroke: var(--down); }
 
+/* ---- open-now badge + strip */
+.badge { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin-left: 6px; border-radius: 999px;
+  background: var(--accent); color: #1b1203; font: 700 11px/1 var(--mono); }
+.tabs a[aria-current="page"] .badge { background: #1b1203; color: var(--board-text); }
+h2 .count { font: 600 .55em/1 var(--mono); vertical-align: middle; padding: 4px 9px; border-radius: 999px; background: var(--accent); color: #1b1203; }
+.openstrip { border: 2px solid var(--accent); border-radius: 14px; padding: 18px 16px 20px; background: color-mix(in srgb, var(--accent) 6%, var(--paper)); }
+
+/* ---- CLV page */
+.clvcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; }
+.clvcard { background: var(--ticket); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+.sb-h2 { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 800 24px/1 var(--display); text-transform: uppercase; }
+.clvgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.clvgrid div { display: grid; gap: 3px; align-content: start; }
+.clvgrid small { font: 600 11px/1.2 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.clvgrid b { font: 600 28px/1.05 var(--mono); font-variant-numeric: tabular-nums; }
+.clvgrid div:first-child b { font-size: 34px; }
+.clvgrid span { font-size: 12.5px; color: var(--muted); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; }
+.minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 18px; }
+.minis > div { display: grid; gap: 8px; align-content: start; }
+.minis h3 { font-size: 22px; text-transform: uppercase; }
+.mini { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-decoration: none; background: var(--ticket);
+  border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+.mini:hover { border-color: var(--ink); }
+.mini .mono { font-weight: 600; font-size: 15px; white-space: nowrap; }
+
 footer { border-top: 1px solid var(--rule); }
 footer .wrap { padding-block: 24px 40px; display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
 footer b { color: var(--ink); }

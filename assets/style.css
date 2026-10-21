@@ -168,7 +168,8 @@ dl.defs dd { margin: 0; color: var(--muted); max-width: 70ch; }
 .seal.W { color: var(--up); } .seal.L { color: var(--down); } .seal.P, .seal.VOID { color: var(--muted); }
 .final { font: 500 12.5px/1.3 var(--mono); color: var(--muted); }
 .final b { color: var(--ink); font-weight: 600; }
-.final.up b { color: var(--up); } .final.down b { color: var(--down); }
+.final.up b { color: var(--up); }
+.final.bestnow b { color: var(--accent); } .final.down b { color: var(--down); }
 .drawer { margin: 0 16px; border-top: 1px solid var(--rule); }
 .drawer summary { cursor: pointer; list-style: none; padding: 10px 0; font: 600 12px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
   display: flex; justify-content: space-between; align-items: center; }

@@ -89,6 +89,16 @@
   const afterDraw = () => { reveal(); countdowns(); };
 
   document.querySelectorAll(".tabs a").forEach((a) => { if (a.dataset.tab === page) a.setAttribute("aria-current", "page"); });
+
+  /* sticky bar: a shadow once the page scrolls; on phones the tabs fold into a menu button */
+  const navbar = $("navbar"), burger = $("burger");
+  const onScroll = () => navbar.classList.toggle("scrolled", scrollY > 8);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  const setMenu = (open) => { navbar.classList.toggle("open", open); burger.setAttribute("aria-expanded", String(open)); };
+  burger.addEventListener("click", (e) => { e.stopPropagation(); setMenu(!navbar.classList.contains("open")); });
+  document.addEventListener("click", (e) => { if (!navbar.contains(e.target)) setMenu(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
+  $("tabs").addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
   $("updated").textContent = `Last updated ${D.updated} ET.`;
 
   /* light / dark switch (remembered on this device) */
@@ -139,7 +149,7 @@
   // the record's prop before the paper desk
   const openPicks = allPicks.filter((p) => !p.result)
     .sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "") || (a.prop === "passing_yards" ? -1 : 1) - (b.prop === "passing_yards" ? -1 : 1));
-  if (openPicks.length) { const b = $("open-count"); b.textContent = openPicks.length; b.hidden = false; }
+  if (openPicks.length) { for (const id of ["open-count", "burger-count"]) { const b = $(id); b.textContent = openPicks.length; b.hidden = false; } }
   const seasons = [...new Set(allPicks.map((p) => p.season))].sort((a, b) => b - a);
   const weeksOf = (season, picks = allPicks) => [...new Set(picks.filter((p) => p.season === season).map((p) => p.week))].sort((a, b) => b - a);
   const qs = new URLSearchParams(location.search);

@@ -213,7 +213,7 @@
         <div class="t-pick"><span><b>${p.side} ${p.line}</b><small>${odds(p.price)} ${esc(p.book)}</small></span>
           ${p.result ? "" : `<span class="res ${p.state}">${p.state === "open" ? "OPEN" : "IN PLAY"}</span>`}</div>
         ${!p.result && p.state === "open" && p.playable_to != null ? `<div class="final">Playable to <b>${odds(p.playable_to)}</b> at ${p.line}</div>` : ""}
-        ${!p.result && p.state === "open" && p.best_price != null ? `<div class="final bestnow">Best now <b>${p.side} ${p.best_line} ${odds(p.best_price)}</b> ${esc(p.best_book)} <span class="muted">(${esc(p.best_at)} ET)</span></div>` : ""}
+        ${!p.result && p.state === "open" && p.best_price != null ? `<div class="final bestnow ${p.best_ok ? "ok" : "pass"}">Now <b>${p.side} ${p.best_line} ${odds(p.best_price)}</b> ${esc(p.best_book)} &middot; ${esc(p.best_verdict || "")} <span class="muted">(${esc(p.best_at)} ET)</span></div>` : ""}
         ${final}
         ${p.result ? `<div class="seal ${p.result}" aria-label="${SEAL[p.result]}">${SEAL[p.result]}</div>` : ""}
       </div>
@@ -411,7 +411,7 @@
           <dt>Value vs close</dt><dd>What the pick was worth against the closing market, with the bookmaker's cut removed. A pick at exactly the closing line at -110 scores about -4.5%; above 0% means beating the close by more than the cut. Over a few hundred picks, this is the most reliable sign of a real edge, far more than win rate.</dd>
           <dt>Beat the close</dt><dd>The pick got a better line than the close, or the same line at a better price. A pick can beat the close on the line and still score below 0% on value, if its price was worse than the closing price.</dd>
           <dt>Line moved</dt><dd>How far the line moved from the pick to the close (or to now, before kickoff). Green means toward the pick: the market came to us.</dd>
-          <dt>Best now</dt><dd>When a better price on the same side shows up after a pick was stamped (often DraftKings posting later than FanDuel), open tickets show it with the time it was seen. The pick is still graded at its stamped price.</dd>
+          <dt>Now</dt><dd>When the price has changed since a pick was stamped, open tickets show the price available at our last check, on the pick's own line, and whether it is better than the pick, still playable (at or above "playable to"), or no longer worth betting. The pick is still graded at its stamped price.</dd>
           <dt>Playable to</dt><dd>The worst price at the stamped line where the pick still clears our value bar (expected value of at least ${D.min_ev ?? 2}%). If your book offers the same line at that price or better, the pick still holds; worse than that, pass.</dd>
           <dt>Units</dt><dd>The record is graded flat, 1 unit per pick at the price stamped, so one big bet can't flatter the numbers. The stake on each ticket is a suggestion in units, where 1u = 1% of a bankroll (quarter-Kelly, capped at 2u).</dd>
           <dt>Ticket details</dt><dd>Tap a ticket's details to see every book's line when the pick was stamped, Pinnacle's line at the same moment, and the market's own number next to the model's.</dd>

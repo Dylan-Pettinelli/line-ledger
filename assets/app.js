@@ -42,42 +42,51 @@
       <span class="gmeta">${gameWhen(g)}<span>${g.picks.length} open</span></span></a>`;
   const gameStrip = (list, href) => `<div class="gstrip" role="list" aria-label="Games with open picks">${gamesOf(list).map((g) => gameChip(g, href)).join("")}</div>`;
 
-  /* carousel: scroll-snap track, auto-advances when there are more cards than fit; stops on any interaction */
-  let carouselTimer = null;
-  function carousel(list, moreHref, cap = 12) {
-    const items = list.slice(0, cap).map(ticket);
-    if (list.length > cap) items.push(`<a class="ticket morecard" href="${moreHref}"><b>+${list.length - cap}</b><span>more open picks</span><span class="more">See all &rarr;</span></a>`);
-    return `<div class="carousel" id="carousel" aria-roledescription="carousel" aria-label="Open picks">
-      <div class="ctrack" id="ctrack" tabindex="0">${items.map((h) => `<div class="cslide">${h}</div>`).join("")}</div>
-      <div class="cbar"><button type="button" class="cbtn" id="cprev" aria-label="Previous">&larr;</button>
-        <span class="ccount mono" id="ccount"></span>
-        <button type="button" class="cbtn" id="cplay" aria-label="Pause auto-rotation">Pause</button>
-        <button type="button" class="cbtn" id="cnext" aria-label="Next">&rarr;</button></div></div>`;
+  /* the moving strip: compact mini-tickets gliding past on their own (hover or the button pauses it) */
+  function miniTicket(p) {
+    const P = D.props[p.prop];
+    const now = p.best_price != null ? `<span class="m-now ${p.best_ok ? "ok" : "pass"}">now ${odds(p.best_price)} ${esc(p.best_book)}</span>` : "";
+    const when = p.state === "open" && p.kick_utc ? `<span class="countdown" data-kick="${p.kick_utc}" data-short="1">${esc(p.kick)}</span>` : `<span class="live"><i></i>Live</span>`;
+    return `<a class="mt" href="${linkTo(p)}" style="${band(p)}" aria-label="${esc(p.player)} ${p.side} ${p.line}">
+      <span class="m-top"><span class="gteams">${gameLabel(p)}</span>${when}</span>
+      <span class="m-player">${esc(p.player)}</span>
+      <span class="m-pick"><b>${p.side} ${p.line}</b> ${odds(p.price)} <small>${esc(p.book)}</small></span>
+      <span class="m-foot">${sharpChip(p.sharp)}${P.paper ? `<span class="chip paper">paper</span>` : `<span class="m-stake">${num(p.units, 1)}u</span>`}${now}</span>
+    </a>`;
   }
-  function initCarousel() {
-    clearInterval(carouselTimer);
-    const track = $("ctrack");
-    if (!track) return;
-    const slides = [...track.children];
-    const step = () => slides[0].getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0);
-    const perView = () => Math.max(1, Math.round(track.clientWidth / step()));
-    const index = () => Math.round(track.scrollLeft / step());
-    const count = () => { const i = index(), v = perView(); $("ccount").textContent = `${i + 1}${v > 1 ? "-" + Math.min(slides.length, i + v) : ""} of ${slides.length}`; };
-    const go = (i) => { const max = slides.length - perView(); track.scrollTo({ left: (i > max ? 0 : i < 0 ? max : i) * step(), behavior: "smooth" }); };
-    let paused = matchMedia("(prefers-reduced-motion: reduce)").matches, hold = false;
-    const setPlay = () => { $("cplay").textContent = paused ? "Play" : "Pause"; $("cplay").setAttribute("aria-label", paused ? "Start auto-rotation" : "Pause auto-rotation"); };
-    carouselTimer = setInterval(() => { if (!paused && !hold && !document.hidden && slides.length > perView()) go(index() + 1); }, 6000);
-    $("cprev").onclick = () => { paused = true; setPlay(); go(index() - 1); };
-    $("cnext").onclick = () => { paused = true; setPlay(); go(index() + 1); };
-    $("cplay").onclick = () => { paused = !paused; setPlay(); };
-    const c = $("carousel");
-    c.addEventListener("mouseenter", () => (hold = true)); c.addEventListener("mouseleave", () => (hold = false));
-    c.addEventListener("focusin", () => (hold = true)); c.addEventListener("focusout", () => (hold = false));
-    track.addEventListener("touchstart", () => { paused = true; setPlay(); }, { passive: true });
-    track.addEventListener("scroll", () => requestAnimationFrame(count), { passive: true });
-    if (slides.length <= perView()) $("carousel").classList.add("still");
-    setPlay(); count();
+  function marquee(list) {
+    const cards = list.map(miniTicket).join("");
+    const secs = Math.max(24, list.length * 5);               // ~5 s per ticket on screen, whatever the count
+    return `<div class="marquee" id="marquee" style="--dur:${secs}s" aria-label="Open picks, moving">
+      <div class="mtrack">${cards}<span class="mgap"></span>${cards.replace(/<a class="mt"/g, '<a tabindex="-1" aria-hidden="true" class="mt"')}<span class="mgap"></span></div>
+    </div>`;
   }
+  function initMarquee() {
+    const m = $("marquee"), b = $("mtoggle");
+    if (!m) return;
+    b.onclick = () => { const on = m.classList.toggle("paused"); b.textContent = on ? "Play" : "Pause"; b.setAttribute("aria-pressed", String(on)); };
+  }
+
+  /* motion: tickets glide in as they scroll into view; scoreboard numbers count up once */
+  function reveal() {
+    const items = document.querySelectorAll(".ticket:not(.in), .clvcard:not(.in), .chart:not(.in), .way:not(.in)");
+    if (!("IntersectionObserver" in window)) { items.forEach((el) => el.classList.add("in")); return; }
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }),
+      { rootMargin: "0px 0px -6% 0px" });
+    items.forEach((el, i) => { el.style.setProperty("--i", i % 6); el.classList.add("rv"); io.observe(el); });
+  }
+  function countUp() {
+    document.querySelectorAll(".tote b, .clvgrid b").forEach((el) => {
+      const m = el.textContent.match(/^([+-]?)(\d+(?:\.\d+)?)(.*)$/);
+      if (!m || el.dataset.done || /^-\d/.test(m[3])) return;          // not records like "4-3"
+      el.dataset.done = "1";
+      const [, sign, n, rest] = m, target = parseFloat(n), dec = (n.split(".")[1] || "").length, t0 = performance.now();
+      const step = (t) => { const k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = `${sign}${(target * e).toFixed(dec)}${rest}`; if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+  }
+  const afterDraw = () => { reveal(); countdowns(); };
 
   document.querySelectorAll(".tabs a").forEach((a) => { if (a.dataset.tab === page) a.setAttribute("aria-current", "page"); });
   $("updated").textContent = `Last updated ${D.updated} ET.`;
@@ -96,7 +105,7 @@
       const ms = new Date(el.dataset.kick) - Date.now();
       if (ms <= 0) { el.textContent = "kicked off"; return; }
       const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
-      el.textContent = `kicks off in ${d ? d + "d " + h + "h" : h ? h + "h " + (m % 60) + "m" : (m % 60) + "m"}`;
+      el.textContent = `${el.dataset.short ? "in" : "kicks off in"} ${d ? d + "d " + h + "h" : h ? h + "h " + (m % 60) + "m" : (m % 60) + "m"}`;
     });
   }
   setInterval(countdowns, 30000);
@@ -328,9 +337,9 @@
       const nOpen = openPicks.length, firstN = 3;
       $("app").innerHTML = `
         ${nOpen ? `<section class="openstrip"><div class="head"><div><div class="eyebrow">Live &middot; not graded yet</div><h2>Open now <span class="count">${nOpen}</span></h2></div>
-          <a class="more" href="open.html">All open picks &rarr;</a></div>
+          <span class="headbtns">${nOpen >= firstN ? `<button type="button" class="mtoggle" id="mtoggle" aria-pressed="false" aria-label="Pause the moving picks">Pause</button>` : ""}<a class="more" href="open.html">All open picks &rarr;</a></span></div>
           ${gameStrip(openPicks, "open.html")}
-          ${nOpen > firstN ? carousel(openPicks, "open.html") : tickets(openPicks)}</section>` : ""}
+          ${nOpen >= firstN ? marquee(openPicks) : `<div class="minis-row">${openPicks.map(miniTicket).join("")}</div>`}</section>` : ""}
         <div class="pickbar">${pickers(allPicks, false)}</div>
         ${board()}
         ${notify()}
@@ -338,8 +347,8 @@
           <p class="lede">Win-loss swings with luck for hundreds of bets. The closing line is the market's sharpest price; consistently getting a better number than it is the clearest sign of a real edge. Every ticket shows where the line went after the pick and what the pick was worth against the close.</p>
           <a class="more" href="method.html">How we grade &rarr;</a></section>`;
       wirePickers(draw);
-      initCarousel();
-      countdowns();
+      initMarquee();
+      afterDraw();
     };
     function board() {
       const wk = (X) => X ? X.picks.filter((p) => p.season === state.season && p.week === state.week) : [];
@@ -350,9 +359,9 @@
           ${P ? weekHead(P, state.season, state.week).replace('class="weekhead"', 'class="weekhead slim"') : ""}</div>
           ${wp.length ? tickets(wp) : `<div class="empty">No passing-yards picks posted for this week yet. Picks go up when the books post lines and the model finds value, usually Wednesday or Thursday.</div>`}
           <a class="more" href="passing.html">Full record and every pick &rarr;</a></section>
-        ${R ? `<section><div class="head"><div><div class="eyebrow">Week ${state.week ?? "-"}, ${state.season} &middot; research desk, not part of the record</div><h2>Receptions</h2></div>
+        ${R ? `<section><div class="head"><div><div class="eyebrow">Week ${state.week ?? "-"}, ${state.season} &middot; ${R.paper ? "research desk, not part of the record" : "live since week 7"}</div><h2>Receptions</h2></div>
           ${weekHead(R, state.season, state.week).replace('class="weekhead"', 'class="weekhead slim"')}</div>
-          ${wr.length ? `<p class="lede">${wr.length} paper picks this week. Shown: the six Pinnacle agrees with most.</p>${tickets(topR)}` : `<div class="empty">No receptions paper picks for this week yet.</div>`}
+          ${wr.length ? `<p class="lede">${wr.length} ${R.paper ? "paper " : ""}picks this week. Shown: the six Pinnacle agrees with most.</p>${tickets(topR)}` : `<div class="empty">No receptions picks for this week yet.</div>`}
           <a class="more" href="receptions.html?season=${state.season}&week=${state.week}">All ${wr.length} receptions picks &rarr;</a></section>` : ""}`;
     }
     if (state.week == null || state.week === "all") state.week = D.week;
@@ -382,7 +391,7 @@
       $("chips").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { active = b.dataset.k; draw(); }));
       $("picks").innerHTML = weeks.length ? weeks.map((w) => `<div class="weekgroup">${weekHead(P, state.season, w)}${tickets(shown.filter((p) => p.week === w))}</div>`).join("")
         : `<div class="empty">No picks match.</div>`;
-      countdowns();
+      afterDraw();
     };
     $("app").innerHTML = `
       <section><div class="head"><div><div class="eyebrow">Graded flat, 1 unit per pick &middot; all seasons</div><h2>Record</h2></div></div>
@@ -448,7 +457,7 @@
       $("chips").innerHTML = kinds.map(([k, label, g]) => `<button type="button" data-k="${k}" aria-pressed="${k === active}">${label}<span>${openPicks.filter(g).length}</span></button>`).join("");
       $("chips").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { active = b.dataset.k; draw(); }));
       $("list").innerHTML = openBoard(openPicks.filter(f));
-      countdowns();
+      afterDraw();
     };
     $("app").innerHTML = `<section>${openPicks.length ? `${gameStrip(openPicks, "")}<div class="filters" id="chips" role="group" aria-label="Filter open picks"></div>` : ""}<div id="list" class="weekgroups">${openBoard()}</div></section>`;
     if (openPicks.length) draw();
@@ -502,6 +511,7 @@
       <section><a class="more" href="method.html">How value vs close is worked out &rarr;</a></section>`;
   }
 
+  setTimeout(() => { reveal(); countUp(); }, 0);
   if (page === "open") openPage();
   else if (page === "clv") clvPage();
   else if (page === "home") home();

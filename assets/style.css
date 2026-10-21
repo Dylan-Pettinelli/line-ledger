@@ -265,7 +265,7 @@ h2 .count { font: 600 .55em/1 var(--mono); vertical-align: middle; padding: 4px 
 .gmeta { display: flex; justify-content: space-between; gap: 12px; font: 500 11.5px/1.2 var(--mono); color: var(--muted); }
 .live { display: inline-flex; align-items: center; gap: 5px; color: var(--down); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
 .live i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-@media (prefers-reduced-motion: no-preference) { .live i { animation: blink 1.4s ease-in-out infinite; } @keyframes blink { 50% { opacity: .25; } } }
+.live i { animation: blink 1.4s ease-in-out infinite; } @keyframes blink { 50% { opacity: .25; } }
 
 /* ---- carousel (home page, when more picks are open than fit) */
 .carousel { display: grid; gap: 10px; min-width: 0; }
@@ -284,6 +284,60 @@ h2 .count { font: 600 .55em/1 var(--mono); vertical-align: middle; padding: 4px 
 .morecard .more { justify-self: center; color: var(--ink); }
 @media (max-width: 900px) { .ctrack { grid-auto-columns: calc((100% - 16px) / 2); } }
 @media (max-width: 680px) { .ctrack { grid-auto-columns: 93%; column-gap: 10px; } .openstrip { padding-inline: 12px; } }
+
+/* ---- the moving strip of mini-tickets (home "Open now") */
+.openstrip { gap: 14px; padding: 16px 16px 18px; }
+.openstrip .head h2 { font-size: clamp(26px, 3.6vw, 34px); }
+.marquee { position: relative; overflow: hidden; margin-inline: -16px; padding-block: 6px 8px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.mtrack { display: flex; gap: 12px; width: max-content; animation: ll-marquee var(--dur, 40s) linear infinite; }
+.marquee:hover .mtrack, .marquee:focus-within .mtrack, .marquee.paused .mtrack { animation-play-state: paused; }
+.mgap { flex: none; width: 0; }
+@keyframes ll-marquee { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 6px)); } }
+.headbtns { display: inline-flex; align-items: center; gap: 8px; }
+.mtoggle { font: 600 12px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--rule);
+  background: var(--ticket); color: var(--muted); padding: 11px 13px; border-radius: 6px; cursor: pointer; }
+.mtoggle:hover { color: var(--ink); border-color: var(--ink); }
+.minis-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.mt { flex: none; width: 236px; display: grid; gap: 7px; text-decoration: none; color: var(--ink); border: 1px solid var(--rule);
+  border-radius: 12px; padding: 13px 14px 12px; position: relative; overflow: hidden;
+  background: linear-gradient(90deg, var(--c1, var(--rule)) 0 64%, var(--c2, var(--rule)) 64%) top / 100% 4px no-repeat, var(--ticket);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.mt:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--c1, var(--ink)) 60%, var(--rule));
+  box-shadow: 0 14px 28px -18px color-mix(in srgb, var(--c1, #000) 80%, transparent); }
+.mt::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s ease;
+  background: linear-gradient(115deg, transparent 30%, color-mix(in srgb, #fff 9%, transparent) 50%, transparent 70%); }
+.mt:hover::after { opacity: 1; }
+.m-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font: 500 11px/1 var(--mono); color: var(--muted); }
+.m-top .tm { font-size: 10.5px; min-width: 30px; padding: 3px 5px 4px; }
+.m-top .at { margin: 0 3px; }
+.m-player { font: 800 22px/1 var(--display); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-pick { font: 500 13px/1.2 var(--mono); color: var(--muted); }
+.m-pick b { font: 600 16px/1 var(--mono); color: var(--ink); margin-right: 4px; }
+.m-pick small { font-size: 11px; }
+.m-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-height: 22px; }
+.m-foot .chip { font-size: 9.5px; padding: 4px 6px; }
+.m-stake { font: 600 12px/1 var(--mono); color: var(--muted); }
+.m-now { font: 600 11px/1 var(--mono); }
+.m-now.ok { color: var(--up); } .m-now.pass { color: var(--down); }
+
+/* ---- motion: tickets glide up into place as they scroll into view; a living band on open tickets */
+.rv { opacity: 0; transform: translateY(18px) scale(.985); transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1);
+  transition-delay: calc(var(--i, 0) * 60ms); }
+.rv.in { opacity: 1; transform: none; }
+.ticket:not(.graded) { background:
+  linear-gradient(100deg, transparent 0 40%, color-mix(in srgb, #fff 35%, transparent) 50%, transparent 60%) 0 0 / 250% 5px no-repeat,
+  linear-gradient(90deg, var(--c1, var(--rule)) 0 64%, var(--c2, var(--rule)) 64%) top / 100% 5px no-repeat, var(--ticket);
+  animation: ll-band 5s ease-in-out infinite; }
+@keyframes ll-band { 0%, 60% { background-position: 120% 0, 0 0, 0 0; } 100% { background-position: -120% 0, 0 0, 0 0; } }
+.ticket { transition: transform .25s ease, box-shadow .25s ease, opacity .6s ease; }
+.ticket.rv.in:hover { transform: translateY(-4px); box-shadow: 0 18px 32px -20px color-mix(in srgb, var(--c1, #000) 75%, transparent); }
+.gchip { transition: transform .2s ease, border-color .2s ease; }
+.gchip:hover { transform: translateY(-2px); }
+h2 .count { animation: ll-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes ll-pop { from { transform: scale(.4); opacity: 0; } }
+@media (max-width: 680px) { .mt { width: 208px; } .m-player { font-size: 20px; } .marquee { margin-inline: -12px; } }
 
 footer { border-top: 1px solid var(--rule); }
 footer .wrap { padding-block: 24px 40px; display: grid; gap: 8px; font-size: 13px; color: var(--muted); }

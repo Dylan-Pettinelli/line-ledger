@@ -373,6 +373,20 @@ h2 .count { animation: ll-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
 }
 @media (max-width: 680px) { .board .wrap { padding-block: 18px 22px; } }
 
+/* ---- ticket readability: pick vs close/now table, larger labels, stronger contrast */
+.cmp { display: grid; grid-template-columns: 52px 1fr 1fr 44px; align-items: baseline; gap: 6px 10px;
+  font: 600 16px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.cmp small { font: 600 10.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cmp .lbl { font: 600 12px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cmp > span:not(.lbl) { font: 500 13px/1 var(--mono); color: var(--muted); }
+.cmp b.up { color: var(--up); } .cmp b.down { color: var(--down); }
+.clv-f { font-size: 13px; color: color-mix(in srgb, var(--ink) 70%, var(--muted)); }
+.clv-h small { font-size: 11.5px; }
+.stats { font-size: 11.5px; }
+.stats b { font-size: 15px; }
+.t-meta { font-size: 13px; }
+.final { font-size: 13px; }
+
 footer { border-top: 1px solid var(--rule); }
 footer .wrap { padding-block: 24px 40px; display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
 footer b { color: var(--ink); }

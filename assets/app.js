@@ -14,7 +14,7 @@
   const wl = (r) => r && r.n ? `${r.W}-${r.L}${r.P ? "-" + r.P : ""}` : "0-0";
   const SHARP = { agrees: "Sharp agrees", against: "Sharp against", neutral: "Sharp neutral", "no line": "No sharp line" };
   const SEAL = { W: "Win", L: "Loss", P: "Push", VOID: "Void" };
-  const sharpChip = (s) => s ? `<span class="chip ${s === "no line" ? "noline" : s}">${SHARP[s] || esc(s)}</span>` : "";
+  const sharpChip = (s, atClose) => s ? `<span class="chip ${s === "no line" ? "noline" : s}"${atClose ? ' title="Pinnacle\'s closing line"' : ' title="Pinnacle\'s latest line"'}>${SHARP[s] || esc(s)}${atClose ? " &middot; close" : ""}</span>` : "";
 
   /* team colors: badges and ticket bands (colors only - no logos) */
   const TEAMS = D.teams || {};
@@ -227,7 +227,7 @@
       : p.result === "VOID" ? `<div class="final">Didn't play &middot; bet refunded</div>` : "";
     return `<article class="ticket${p.result ? " graded" : ""}" id="${esc(p.serial)}" style="${band(p)}">
       <div class="t-top">
-        <div class="t-meta"><span class="t-game">${gameLabel(p)}<span>${esc(p.kick)}</span></span>${sharpChip(p.sharp)}</div>
+        <div class="t-meta"><span class="t-game">${gameLabel(p)}<span>${esc(p.kick)}</span></span>${sharpChip(p.sharp, p.sharp_close)}</div>
         <div class="t-player">${esc(p.player)}</div>
         <div class="t-pick"><span><b>${p.side} ${p.line}</b><small>${odds(p.price)} ${esc(p.book)}</small></span>
           ${p.result ? "" : `<span class="res ${p.state}">${p.state === "open" ? "OPEN" : "IN PLAY"}</span>`}</div>
@@ -436,7 +436,7 @@
           <dt>Ticket details</dt><dd>Tap a ticket's details to see every book's line when the pick was stamped, Pinnacle's line at the same moment, and the market's own number next to the model's.</dd>
         </dl></section>
       <section><div><div class="eyebrow">Model + sharp money</div><h2>The Sharp label</h2></div>
-        <p class="lede">Pinnacle is the sharpest sportsbook: it takes large bets from professionals and moves fast. When a pick is stamped, we record Pinnacle's line for the same player and ask which side its prices favour at our line.</p>
+        <p class="lede">Pinnacle is the sharpest sportsbook: it takes large bets from professionals and moves fast. For every pick we read Pinnacle's line for the same player and ask which side its prices favour at our line. The label stays current until kickoff, then locks on Pinnacle's closing line (marked "close"): did the sharp money finish on our side?</p>
         <dl class="defs">
           <dt>Sharp agrees</dt><dd>Pinnacle priced our side as the likelier winner. The model and sharp money lean the same way.</dd>
           <dt>Sharp neutral</dt><dd>Pinnacle had it a coin flip at our line.</dd>

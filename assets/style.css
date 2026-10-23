@@ -373,13 +373,20 @@ h2 .count { animation: ll-pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
 }
 @media (max-width: 680px) { .board .wrap { padding-block: 18px 22px; } }
 
-/* ---- ticket readability: pick vs close/now table, larger labels, stronger contrast */
-.cmp { display: grid; grid-template-columns: 52px 1fr 1fr 44px; align-items: baseline; gap: 6px 10px;
-  font: 600 16px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
-.cmp small { font: 600 10.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.cmp .lbl { font: 600 12px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.cmp > span:not(.lbl) { font: 500 13px/1 var(--mono); color: var(--muted); }
-.cmp b.up { color: var(--up); } .cmp b.down { color: var(--down); }
+/* ---- ticket: two movement bars (line, price), pick on the left, close/now on the right */
+.mv { display: grid; grid-template-columns: 44px 52px 1fr 52px; align-items: center; gap: 7px 10px; }
+.mv small { font: 600 10.5px/1 var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.mv small:last-child { text-align: right; }
+.mv .lbl { font: 600 11px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mv > b { font: 600 15px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.mv > b:last-child, .mv > b:nth-child(4n) { text-align: right; }
+.mv > b.up { color: var(--up); } .mv > b.down { color: var(--down); }
+.mv .bar { height: 6px; background: var(--soft); border-radius: 6px; position: relative; }
+.mv .bar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; transition: width .6s cubic-bezier(.2, .7, .2, 1); }
+.mv .bar i.up { background: var(--up); } .mv .bar i.down { background: var(--down); }
+.mv .bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--muted); }
+.clv-f .bk { font: 600 12px/1 var(--mono); color: var(--muted); white-space: nowrap; }
+.clv-b { font: 500 11.5px/1.2 var(--mono); color: var(--muted); }
 .clv-f { font-size: 13px; color: color-mix(in srgb, var(--ink) 70%, var(--muted)); }
 .clv-h small { font-size: 11.5px; }
 .stats { font-size: 11.5px; }

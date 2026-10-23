@@ -196,8 +196,12 @@
   const abbr = (b) => ({ DraftKings: "DK", FanDuel: "FD", Pinnacle: "PIN" }[b] || b || "");
   // for the bettor of this pick, is `price` better (+1), worse (-1) or the same (0) than what the pick got?
   const priceDir = (pick, other) => { const dec = (a) => a > 0 ? 1 + a / 100 : 1 + 100 / -a; const x = dec(other) - dec(pick); return Math.abs(x) < 1e-9 ? 0 : x > 0 ? 1 : -1; };
+  // a slim movement bar: fills from the centre tick, green toward the pick, red against (w = 0..50 % of the track)
+  const bar = (dir, w) => `<span class="bar" aria-hidden="true">${dir > 0 ? `<i class="up" style="left:50%;width:${w}%"></i>`
+    : dir < 0 ? `<i class="down" style="left:${50 - w}%;width:${w}%"></i>` : ""}</span>`;
+  const implied = (a) => a > 0 ? 100 / (a + 100) : -a / (-a + 100);           // price -> win chance the book charges for
   function compare(p, unit) {
-    // the pick, against the close (after kickoff) or the best price available now (before)
+    // the pick against the close (after kickoff) or the best price available now (before): a LINE bar and a PRICE bar
     let label, line, price, book, note = "";
     if (p.closed && p.now != null) {
       label = "Close"; line = p.now; price = p.close_price; book = p.close_book;
@@ -206,21 +210,30 @@
     } else if (p.now != null) {
       label = p.closed ? "Close" : "Now"; line = p.now; price = p.close_price; book = p.close_book;
     }
-    const rows = [`<span class="lbl">Pick</span><b>${p.line}</b><b>${odds(p.price)}</b><span>${abbr(p.book)}</span>`];
-    let foot;
-    if (label) {
-      const mv = (line - p.line) * (p.side === "OVER" ? 1 : -1);
-      // you gained if the market made the same bet worse for anyone betting it after you
-      const pd = price == null ? 0 : -priceDir(p.price, price);
-      rows.push(`<span class="lbl">${label}</span><b class="${tone(mv)}">${line}</b><b class="${line === p.line ? (pd > 0 ? "up" : pd < 0 ? "down" : "") : ""}">${price == null ? "&ndash;" : odds(price)}</b><span>${abbr(book)}</span>`);
-      const what = mv > 0 ? `line moved ${sgn(mv)}${mv.toFixed(1)} ${unit} your way` : mv < 0 ? `line moved ${Math.abs(mv).toFixed(1)} ${unit} against you`
-        : pd > 0 ? "price moved your way" : pd < 0 ? "price moved against you" : "no movement";
-      foot = p.closed ? `<span>Beat the close: <b class="${p.beat ? "up" : "down"}">${p.beat ? "yes" : "no"}</b> &middot; ${what}</span>`
-        : `<span>${what}${note ? ` &middot; <b class="${p.best_ok ? "up" : "down"}">${p.best_ok ? (note.startsWith("better") ? "better than the pick" : "still playable") : "pass"}</b>` : ""}</span>${kickSpan(p)}`;
-    } else {
-      foot = `<span>${p.result ? "no closing line" : "no newer line yet"}</span>${p.result ? "" : kickSpan(p)}`;
+    if (!label) {
+      return `<div class="mv"><span></span><small>Pick</small><span></span><small></small>
+        <span class="lbl">Line</span><b>${p.line}</b>${bar(0, 0)}<b class="muted">&ndash;</b>
+        <span class="lbl">Price</span><b>${odds(p.price)}</b>${bar(0, 0)}<b class="muted">&ndash;</b></div>
+        <div class="clv-f"><span>${p.result ? "no closing line" : `no newer line yet &middot; ${esc(abbr(p.book))}`}</span>${p.result ? "" : kickSpan(p)}</div>`;
     }
-    return `<div class="cmp"><span></span><small>Line</small><small>Price</small><small>Book</small>${rows.join("")}</div><div class="clv-f">${foot}</div>`;
+    const mv = (line - p.line) * (p.side === "OVER" ? 1 : -1);                 // + = the line moved toward the pick
+    const lineW = Math.min(50, Math.abs(mv) * (p.prop === "receptions" ? 50 : 4));
+    // price: compared at the same line only (another line's price isn't the same bet); + = the bet got pricier after you
+    const same = line === p.line && price != null;
+    const pts = same ? 100 * (implied(price) - implied(p.price)) : 0;          // win-chance points the market moved
+    const priceW = Math.min(50, Math.abs(pts) * 6);
+    const pdir = Math.abs(pts) < 0.05 ? 0 : pts > 0 ? 1 : -1;
+    const what = mv > 0 ? `line moved ${sgn(mv)}${mv.toFixed(1)} ${unit} your way` : mv < 0 ? `line moved ${Math.abs(mv).toFixed(1)} ${unit} against you`
+      : pdir > 0 ? "price moved your way" : pdir < 0 ? "price moved against you" : "no movement";
+    const books = `${abbr(p.book)}${abbr(book) && abbr(book) !== abbr(p.book) ? ` &rarr; ${abbr(book)}` : ""}`;
+    const verdict = note ? ` &middot; <b class="${p.best_ok ? "up" : "down"}">${p.best_ok ? (note.startsWith("better") ? "better than the pick" : "still playable") : "pass"}</b>` : "";
+    const foot = p.closed ? `<span>Beat the close: <b class="${p.beat ? "up" : "down"}">${p.beat ? "yes" : "no"}</b> &middot; ${what}</span><span class="bk">${books}</span>`
+      : `<span>${what}${verdict}</span>${kickSpan(p)}`;
+    return `<div class="mv"><span></span><small>Pick</small><span></span><small>${label}</small>
+        <span class="lbl">Line</span><b>${p.line}</b>${bar(mv > 0 ? 1 : mv < 0 ? -1 : 0, lineW)}<b class="${tone(mv)}">${line}</b>
+        <span class="lbl">Price</span><b>${odds(p.price)}</b>${bar(pdir, priceW)}<b class="${same ? (pdir > 0 ? "up" : pdir < 0 ? "down" : "") : "muted"}">${price == null ? "&ndash;" : odds(price)}</b>
+      </div>
+      <div class="clv-f">${foot}</div>${!p.closed ? `<div class="clv-b">${books}${p.best_at ? ` &middot; checked ${esc(p.best_at)}` : ""}</div>` : ""}`;
   }
 
   function details(p, P) {

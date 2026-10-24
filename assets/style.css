@@ -633,3 +633,41 @@ footer b { color: var(--ink); }
 @media (max-width: 680px) { .rc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .recap { padding: 16px; } .rc-grid b { font-size: 20px; } }
 
 .badge[hidden] { display: none !important; }
+
+/* ---- list view on phones: three columns (player + game, pick, status + CLV), no sideways scrolling */
+.m-only { display: none; }
+@media (max-width: 680px) {
+  .ltable .m-hide { display: none; }
+  .ltable .m-only { display: flex; }
+  .ltable td, .ltable th { padding: 9px 8px; }
+  .ltable .l-player { white-space: normal; }
+  .ltable .l-sub { margin-top: 5px; }
+  .ltable .l-pick { white-space: normal; font-size: 13px; }
+  .ltable .l-px { display: block; margin-top: 3px; font-size: 12px; }
+  .ltable .l-st { text-align: right; }
+  .ltable .l-st .m-only { justify-content: flex-end; margin-top: 6px; }
+  .ltable .l-st .pill { font-size: 10px; padding: 5px 7px; }
+}
+
+/* ---- tighter tickets (every view), and expanded tickets that fit their row */
+.clv-b .stale { color: var(--accent); }
+.t-top { padding: 14px 14px 12px; gap: 5px; }
+.ticket .t-top { padding-top: 15px; }
+.t-player { font-size: 24px; }
+.t-pick b { font-size: 16.5px; }
+.t-meta, .final { font-size: 12px; }
+.clv { padding: 10px 14px 10px; gap: 8px; }
+.clv-h b { font-size: 17px; }
+.mv { gap: 5px 10px; }
+.mv > b { font-size: 14px; }
+.clv-f { font-size: 12px; }
+.stats { margin: 0 14px; padding: 8px 0 9px; }
+.stats b { font-size: 13.5px; }
+.drawer { margin: 0 14px; }
+.drawer summary { padding: 9px 0; font-size: 11px; }
+.drawer dl { font-size: 12px; }
+.stub { padding: 8px 14px 9px; }
+.cs-full .ticket, .lexp .ticket { max-width: 440px; }
+.lexp td { white-space: normal; }
+.lexp .ticket, .cs-full .ticket { text-align: left; }
+@media (max-width: 680px) { .lexp td { padding: 8px 4px; } }

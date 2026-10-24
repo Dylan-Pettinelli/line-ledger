@@ -203,10 +203,20 @@
   const priceDir = (pick, other) => { const dec = (a) => a > 0 ? 1 + a / 100 : 1 + 100 / -a; const x = dec(other) - dec(pick); return Math.abs(x) < 1e-9 ? 0 : x > 0 ? 1 : -1; };
   const bar = (dir, w) => `<span class="bar" aria-hidden="true">${dir > 0 ? `<i class="up" style="left:50%;width:${w}%"></i>` : dir < 0 ? `<i class="down" style="left:${50 - w}%;width:${w}%"></i>` : ""}</span>`;
   const implied = (a) => a > 0 ? 100 / (a + 100) : -a / (-a + 100);
-  function vsLine(p) {           // what the pick is compared with: the close after the start, else the best price now
+  // the newest check of each market: a pick whose own book wasn't quoted then has its line taken down ("not posted since")
+  const lastCheck = {};
+  allPicks.forEach((p) => { if (p.phase === "open" && p.now_utc && (!lastCheck[p.prop] || p.now_utc > lastCheck[p.prop])) lastCheck[p.prop] = p.now_utc; });
+  const dec = (a) => a > 0 ? 1 + a / 100 : 1 + 100 / -a;
+  function vsLine(p) {           // what the pick is compared with: the close after the start, else the SAME book's price now
     if (p.closed && p.now != null) return { label: "Close", line: p.now, price: p.close_price, book: p.close_book };
-    if (p.phase === "open" && p.best_price != null) return { label: "Now", line: p.best_line, price: p.best_price, book: p.best_book, note: p.best_verdict || "" };
-    if (p.now != null) return { label: p.closed ? "Close" : "Now", line: p.now, price: p.close_price, book: p.close_book };
+    if (p.phase === "open") {
+      if (p.now == null || !p.now_same || p.close_price == null) return null;
+      const stale = !!lastCheck[p.prop] && new Date(lastCheck[p.prop]) - new Date(p.now_utc) > 30 * 60000;
+      const better = p.now === p.line && dec(p.close_price) > dec(p.price) + 1e-9;
+      const ok = p.now !== p.line || p.playable_to == null ? null : dec(p.close_price) >= dec(p.playable_to) - 1e-9;
+      return { label: "Now", line: p.now, price: p.close_price, book: p.close_book, stale, at: p.now_at, ok, better };
+    }
+    if (p.now != null) return { label: "Close", line: p.now, price: p.close_price, book: p.close_book };
     return null;
   }
   function moves(p, v) {
@@ -220,19 +230,19 @@
     if (!v) return `<div class="mv"><span></span><small>Pick</small><span></span><small></small>
         <span class="lbl">Line</span><b>${p.line}</b>${bar(0, 0)}<b class="muted">&ndash;</b>
         <span class="lbl">Price</span><b>${odds(p.price)}</b>${bar(0, 0)}<b class="muted">&ndash;</b></div>
-        <div class="clv-f"><span>${p.result ? "no closing line" : `no newer line yet &middot; ${esc(abbr(p.book))}`}</span>${p.result ? "" : kickSpan(p)}</div>`;
+        <div class="clv-f"><span>${p.result ? "no closing line" : `no newer ${esc(p.book)} line yet`}</span>${p.result ? "" : kickSpan(p)}</div>`;
     const { mv, same, pdir, pts } = moves(p, v);
     const lineW = Math.min(50, Math.abs(mv) * (P.unit === "yds" ? 4 : 50)), priceW = Math.min(50, Math.abs(pts) * 6);
     const what = mv > 0 ? `line moved ${sgn(mv)}${mv.toFixed(1)} ${P.unit} your way` : mv < 0 ? `line moved ${Math.abs(mv).toFixed(1)} ${P.unit} against you`
       : pdir > 0 ? "price moved your way" : pdir < 0 ? "price moved against you" : "no movement";
     const books = `${abbr(p.book)}${abbr(v.book) && abbr(v.book) !== abbr(p.book) ? ` &rarr; ${abbr(v.book)}` : ""}`;
-    const verdict = v.note ? ` &middot; <b class="${p.best_ok ? "up" : "down"}">${p.best_ok ? (v.note.startsWith("better") ? "better than the pick" : "still playable") : "pass"}</b>` : "";
+    const verdict = v.stale || v.ok == null ? "" : ` &middot; <b class="${v.ok ? "up" : "down"}">${v.better ? "better than the pick" : v.ok ? "still playable" : "past playable"}</b>`;
     const foot = p.closed ? `<span>Beat the close: <b class="${p.beat ? "up" : "down"}">${p.beat ? "yes" : "no"}</b> &middot; ${what}</span><span class="bk">${books}</span>`
       : `<span>${what}${verdict}</span>${kickSpan(p)}`;
     return `<div class="mv"><span></span><small>Pick</small><span></span><small>${v.label}</small>
         <span class="lbl">Line</span><b>${p.line}</b>${bar(mv > 0 ? 1 : mv < 0 ? -1 : 0, lineW)}<b class="${tone(mv)}">${v.line}</b>
         <span class="lbl">Price</span><b>${odds(p.price)}</b>${bar(pdir, priceW)}<b class="${same ? (pdir > 0 ? "up" : pdir < 0 ? "down" : "") : "muted"}">${v.price == null ? "&ndash;" : odds(v.price)}</b></div>
-      <div class="clv-f">${foot}</div>${!p.closed ? `<div class="clv-b">${books}${p.best_at ? ` &middot; checked ${esc(p.best_at)}` : ""}</div>` : ""}`;
+      <div class="clv-f">${foot}</div>${!p.closed ? `<div class="clv-b">${esc(p.book)} &middot; ${v.stale ? `<span class="stale">not posted since ${esc(v.at)}</span>` : `checked ${esc(v.at || "")}`}</div>` : ""}`;
   }
   function details(p, P) {
     const rows = [];
@@ -301,12 +311,13 @@
   function listView(list) {
     const rows = list.map((p) => { const P = MKT(p.prop), v = vsLine(p);
       return `<tr class="lrow${p.result ? " r-" + p.result : ""}" id="${esc(p.serial)}" data-serial="${esc(p.serial)}" tabindex="0" style="${band(p)}">
-        <td class="l-game"><span class="gteams">${gameLabel(p)}</span></td><td class="l-player">${esc(p.player)}</td><td class="opt">${esc(P.short || P.label)}</td>
-        <td class="mono">${p.side} ${p.line} ${odds(p.price)} <span class="muted">${esc(abbr(p.book))}</span></td>
-        <td class="num opt mono">${v ? `${v.line} ${odds(v.price)}` : "&ndash;"}</td><td class="num">${clvMini(p)}</td>
-        <td class="opt">${p.sharp ? (SHARP[p.sharp] || "").replace("Sharp ", "") : ""}</td><td class="l-st">${status(p, true)}</td></tr>
+        <td class="l-game m-hide"><span class="gteams">${gameLabel(p)}</span></td>
+        <td class="l-player">${esc(p.player)}<span class="m-only l-sub gteams">${gameLabel(p)}</span></td><td class="opt">${esc(P.short || P.label)}</td>
+        <td class="mono l-pick">${p.side} ${p.line} <span class="l-px">${odds(p.price)} <span class="muted">${esc(abbr(p.book))}</span></span></td>
+        <td class="num opt mono">${v ? `${v.line} ${odds(v.price)}` : "&ndash;"}</td><td class="num m-hide">${clvMini(p)}</td>
+        <td class="opt">${p.sharp ? (SHARP[p.sharp] || "").replace("Sharp ", "") : ""}</td><td class="l-st">${status(p, true)}<span class="m-only">${clvMini(p)}</span></td></tr>
         <tr class="lexp" hidden><td colspan="8"></td></tr>`; }).join("");
-    return `<div class="tablebox"><table class="ltable"><thead><tr><th>Game</th><th>Player</th><th class="opt">Market</th><th>Pick</th><th class="num opt">Now / close</th><th class="num">CLV</th><th class="opt">Sharp</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="tablebox"><table class="ltable"><thead><tr><th class="m-hide">Game</th><th>Player</th><th class="opt">Market</th><th>Pick</th><th class="num opt">Now / close</th><th class="num m-hide">CLV</th><th class="opt">Sharp</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function gamesOf(list) {
     const out = [], seen = {};
@@ -381,7 +392,7 @@
     return `<a class="mt" href="${linkTo(p)}" style="${band(p)}" aria-label="${esc(p.player)} ${p.side} ${p.line}">
       <span class="m-top"><span class="gteams">${gameLabel(p)}</span>${status(p, true)}</span><span class="m-player">${esc(p.player)}</span>
       <span class="m-pick"><b>${p.side} ${p.line}</b> ${odds(p.price)} <small>${esc(abbr(p.book))} &middot; ${esc(P.short || P.label)}</small></span>
-      <span class="m-foot">${sharpChip(p.sharp)}${p.best_price != null ? `<span class="m-now ${p.best_ok ? "ok" : "pass"}">now ${odds(p.best_price)} ${esc(abbr(p.best_book))}</span>` : ""}</span></a>`;
+      <span class="m-foot">${sharpChip(p.sharp)}${(() => { const v = vsLine(p); return v && !v.stale ? `<span class="m-now ${v.ok === false ? "pass" : "ok"}">now ${odds(v.price)}</span>` : ""; })()}</span></a>`;
   }
   function marquee(list) {
     const cards = list.map(miniTicket).join(""), secs = Math.max(24, list.length * 5);
@@ -390,9 +401,9 @@
 
   /* ------------------------------------------------------------------ featured pick: chosen automatically */
   // the biggest edge (EV at the stamp) among picks not started yet, preferring ones Pinnacle agrees with, and
-  // skipping any whose current price is no longer playable
+  // skipping any whose own book is now past the playable price or has taken the line down
   function featuredPick() {
-    const ok = openNow.filter((p) => p.phase === "open" && p.ev != null && !MKT(p.prop).paper && (p.best_price == null || p.best_ok));
+    const ok = openNow.filter((p) => p.phase === "open" && p.ev != null && !MKT(p.prop).paper && (() => { const v = vsLine(p); return !v || (!v.stale && v.ok !== false); })());
     const agrees = ok.filter((p) => p.sharp === "agrees"), pool = agrees.length ? agrees : ok;
     return pool.length ? pool.reduce((a, b) => (b.ev > a.ev ? b : a)) : null;
   }

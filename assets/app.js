@@ -260,6 +260,18 @@
     const { mv, pdir } = moves(p, v), d = mv !== 0 ? mv : pdir;
     return `<b class="${d > 0 ? "up" : d < 0 ? "down" : "muted"}">${d > 0 ? "Your way" : d < 0 ? "Against" : "No change"}</b>`;
   }
+  // "Bet on <Book>": the pick's own book, open picks only (nothing is placed - the book opens and you confirm)
+  // a brand-colored mark per book (not the books' logos: those are trademarks, used only under their own terms)
+  const BOOKS_OK = { DraftKings: "dk", FanDuel: "fd" };
+  const bookMark = (book) => `<span class="bkmark ${BOOKS_OK[book]}" aria-hidden="true">${BOOKS_OK[book].toUpperCase()}</span>`;
+  const betWhat = (p) => `${p.player} &middot; ${esc(MKT(p.prop).short || MKT(p.prop).label)} &middot; ${p.side} ${p.line}`;
+  function betButton(p, compact) {
+    if (p.phase !== "open" || !p.bet_link || !BOOKS_OK[p.book]) return "";
+    const what = p.bet_kind === "slip" ? "Opens the bet slip" : p.bet_kind === "event" ? "Opens the game" : "Opens the book";
+    return `<div class="betrow${compact ? " compact" : ""}"><a class="betbtn" href="${esc(p.bet_link)}" target="_blank" rel="noopener noreferrer"
+      aria-label="Bet on ${esc(p.book)}: ${esc(p.player)} ${p.side} ${p.line} (opens ${esc(p.book)}; nothing is placed for you)">${bookMark(p.book)}Bet on ${esc(p.book)} &nearr;</a>
+      ${compact ? "" : `<span class="betfind">${what} &middot; find: ${betWhat(p)}</span>`}</div>`;
+  }
   function ticket(p) {
     const P = MKT(p.prop);
     const head = p.closed ? `<small>Closing line value</small><b class="${tone(p.clv_ev)}">${pct(p.clv_ev)}</b>`
@@ -274,6 +286,7 @@
         <div class="t-player">${esc(p.player)}</div>
         <div class="t-pick"><span><b>${p.side} ${p.line}</b><small>${odds(p.price)} ${esc(p.book)}</small></span>${p.result ? "" : status(p)}</div>
         ${p.phase === "open" && p.playable_to != null ? `<div class="final">Playable to <b>${odds(p.playable_to)}</b> &middot; <span class="muted">${esc(P.short || P.label)}</span></div>` : ""}
+        ${betButton(p)}
         ${final}
         ${p.result ? `<div class="seal ${p.result}" aria-label="${SEAL[p.result]}">${SEAL[p.result]}</div>` : ""}
       </div>
@@ -419,6 +432,7 @@
       <div class="fc-player">${esc(p.player)}</div>
       <div class="fc-pick"><b>${p.side} ${p.line}</b> ${odds(p.price)} <small>${esc(p.book)} &middot; ${esc(P.short || P.label)}</small></div>
       <div class="fc-stats"><span>EV <b>${pct(p.ev)}</b></span><span>Win <b>${pct(p.win, false)}</b></span>${p.sharp === "agrees" ? `<span class="fc-sharp">Sharp &#10003;</span>` : ""}</div>
+      ${betButton(p, true)}
       <div class="fc-f"><span>Picked by the numbers, not by hand</span><a href="${linkTo(p).replace(/^.*\//, "")}">Full ticket &rarr;</a></div></aside>`;
   }
 

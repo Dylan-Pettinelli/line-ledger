@@ -680,3 +680,25 @@ footer b { color: var(--ink); }
 .bkdot.fd { background: #1493ff; }
 .fc-bet { display: inline-flex; align-items: center; gap: 7px; font: 600 13px/1 var(--body); color: var(--board-text); text-decoration: none; white-space: nowrap; }
 .fc-bet:hover { text-decoration: underline; }
+
+/* ---- proof of posting time: the public commit that first posted the pick */
+.when a.verify { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+.when a.verify:hover { color: var(--ink); }
+.drawer dd a { color: var(--ink); }
+
+/* ---- small samples: "n=12" next to the number, and a line under young records */
+td .note, small .note { font: 500 10.5px/1 var(--mono); letter-spacing: 0; text-transform: none; margin-left: 4px; }
+p.note.early { margin: 8px 2px 0; font-size: 12.5px; }
+
+/* ---- player page + player links */
+a.plink { color: inherit; text-decoration: none; }
+a.plink:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.hero-stats { margin-top: 4px; }
+.hero-stats div { background: rgba(255, 255, 255, .06); border: 1px solid #2c3b5c; }
+.hero-stats small { color: #aeb9cc; }
+.hero-stats b { color: #fff; }
+.hero-stats b.up { color: #6fd6a2; } .hero-stats b.down { color: #f08a8a; }
+
+/* ---- filter chips (This week, Open) */
+.fchips { margin-top: 8px; }
+.fchips .fclear { border-style: dashed; }

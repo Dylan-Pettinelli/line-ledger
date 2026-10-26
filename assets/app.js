@@ -182,7 +182,7 @@
     });
   }
   setInterval(countdowns, 30000);
-  const afterDraw = () => { reveal(); countdowns(); };
+  const afterDraw = () => { reveal(); countdowns(); filterCount(); };
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("button.share");
     if (!b) return;
@@ -432,7 +432,24 @@
     const h = `<div class="hero"><div class="eyebrow" style="color:#aeb9cc">${eyebrow}</div><h1>${title}</h1><p>${text}</p></div>`;
     $("hero").innerHTML = side ? `<div class="hero-grid">${h}<div class="hg-side">${side}</div><div class="hg-extra">${extra}</div></div>` : h + extra;
   }
-  const toolbar = (pick, withMarket = true) => `<div class="toolbar">${pick}${withMarket ? marketSeg() : ""}<span class="tb-r">${searchBox()}${viewBar()}</span></div>${withMarket ? filterChips() : ""}`;
+  // every way to narrow the list sits behind one Filter button (its count = filters switched on)
+  state.fopen = false;
+  const FUNNEL = `<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/></svg>`;
+  const toolbar = (pick, withMarket = true, panel = "") => `<div class="toolbar">${pick}<span class="tb-r">${searchBox()}
+      <button type="button" class="fbtn" id="fbtn" aria-expanded="${state.fopen}" aria-controls="fpanel">${FUNNEL}Filter<b class="fcount" id="fcount" hidden></b></button>${viewBar()}</span></div>
+    <div class="fpanel" id="fpanel"${state.fopen ? "" : " hidden"}>${withMarket ? `${marketSeg()}${filterChips()}` : ""}${panel}</div>`;
+  function filterCount() {
+    const b = $("fcount"), panel = $("fpanel");
+    if (!b || !panel || !panel.querySelectorAll) return;
+    const n = [...panel.querySelectorAll('button[aria-pressed="true"]')].filter((x) => x.dataset.market !== "all" && x.dataset.k !== "all").length;
+    b.textContent = n || ""; b.hidden = !n;
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("#fbtn");
+    if (!t) return;
+    state.fopen = !state.fopen; t.setAttribute("aria-expanded", String(state.fopen));
+    const panel = $("fpanel"); if (panel) panel.hidden = !state.fopen;
+  });
 
   /* the moving strip of open picks (home) */
   function miniTicket(p) {
@@ -602,10 +619,10 @@
     $("app").innerHTML = `
       <section><div class="head"><div><div class="eyebrow">Graded flat, 1 unit per pick</div><h2>Record</h2></div></div>${recordTable(P.record)}${unitsChart(P)}
         ${P.record.some((r) => r.label === "Pre-launch") ? `<p class="note"><span class="chip pre">pre-launch</span> picks were made by the same model and time-stamped in our private ledger, but not posted publicly before the start. From ${esc(D.launch)} on, every pick is posted before the start.</p>` : ""}</section>
-      <section><div class="head"><div><div class="eyebrow">Newest first</div><h2>Every pick</h2></div></div><div id="tb"></div><div class="filters" id="chips" role="group" aria-label="Filter picks"></div><div id="picks" class="weekgroups"></div></section>`;
-    $("chips").addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) { active = b.dataset.k; redraw(false); } });
+      <section><div class="head"><div><div class="eyebrow">Newest first</div><h2>Every pick</h2></div></div><div id="tb"></div><div id="picks" class="weekgroups"></div></section>`;
+    document.addEventListener("click", (e) => { const b = e.target.closest("#chips button[data-k]"); if (b) { active = b.dataset.k; redraw(false); } });
     redraw = (full) => {
-      if (full !== false || !$("pk-season")) $("tb").innerHTML = toolbar(pickers(P.picks, true), false);
+      if (full !== false || !$("pk-season")) $("tb").innerHTML = toolbar(pickers(P.picks, true), false, `<div class="filters" id="chips" role="group" aria-label="Show"></div>`);
       const scope = P.picks.filter((p) => p.season === state.season && (state.week === "all" || p.week === state.week) && matches(p));
       const f = filters.find((x) => x[0] === active)[2], shown = scope.filter(f);
       $("chips").innerHTML = filters.filter(([k, , g]) => k === "all" || scope.some(g)).map(([k, l, g]) => `<button type="button" data-k="${k}" aria-pressed="${k === active}">${l}<span>${scope.filter(g).length}</span></button>`).join("");

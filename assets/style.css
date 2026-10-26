@@ -699,6 +699,13 @@ a.plink:hover { text-decoration: underline; text-decoration-thickness: 2px; text
 .hero-stats b { color: #fff; }
 .hero-stats b.up { color: #6fd6a2; } .hero-stats b.down { color: #f08a8a; }
 
-/* ---- filter chips (This week, Open) */
-.fchips { margin-top: 8px; }
+/* ---- filters: one button; the options open in a panel under the toolbar */
+.fbtn { display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px/1 var(--body); border: 1px solid var(--rule); background: var(--ticket);
+  color: var(--ink); padding: 9px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.fbtn:hover, .fbtn[aria-expanded="true"] { border-color: var(--ink); }
+.fcount { font: 700 11px/1 var(--mono); background: var(--accent); color: #1b1203; border-radius: 999px; padding: 3px 6px; }
+.fpanel { display: grid; gap: 10px; margin-top: 8px; padding: 12px; border: 1px solid var(--rule); border-radius: 12px; background: var(--ticket); }
+.fpanel[hidden] { display: none; }
+.fpanel .seg { justify-self: start; max-width: 100%; overflow-x: auto; }
+.fpanel .filters { margin: 0; padding: 0; flex-wrap: wrap; overflow: visible; }
 .fchips .fclear { border-style: dashed; }

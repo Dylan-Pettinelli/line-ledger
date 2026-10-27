@@ -41,6 +41,15 @@
 
   /* ------------------------------------------------------------------ all picks, and where each one lives */
   const allPicks = MK.flatMap((k) => MKT(k).picks);
+  // the page was built at the last publish: a pick still "open" whose game has kicked off since is live now
+  function syncPhases() {
+    let moved = false;
+    for (const p of allPicks) {
+      if (p.phase === "open" && p.kick_utc && new Date(p.kick_utc) <= Date.now()) { p.phase = "live"; p.game_state = "In progress"; moved = true; }
+    }
+    return moved;
+  }
+  syncPhases();
   const byId = Object.fromEntries(allPicks.map((p) => [p.serial, p]));
   const pageOf = (p) => `${MKT(p.prop).slug}.html`;
   const linkTo = (p) => new URL(`${pageOf(p)}?season=${p.season}&week=${p.week}#${p.serial}`, location.href).href;
@@ -181,7 +190,7 @@
       el.textContent = `${el.dataset.short ? "in" : `${SPORT.event || "starts"} in`} ${d ? d + "d " + h + "h" : h ? h + "h " + (m % 60) + "m" : (m % 60) + "m"}`;
     });
   }
-  setInterval(countdowns, 30000);
+  setInterval(() => { if (syncPhases()) redraw(true); else countdowns(); }, 30000);    // kickoff while the page is open
   const afterDraw = () => { reveal(); countdowns(); filterCount(); };
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("button.share");

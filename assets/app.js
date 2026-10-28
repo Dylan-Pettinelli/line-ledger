@@ -515,20 +515,36 @@
       units: ps.reduce((s, p) => s + (p.pl || 0), 0), sized: ps.reduce((s, p) => s + (p.pl_u || 0), 0),
       risked: ps.reduce((s, p) => s + (p.pl_u != null ? p.units || 0 : 0), 0),
       beat: beats.length ? (100 * beats.filter((p) => p.beat).length) / beats.length : null,
-      dots: [...ps].filter((p) => ["W", "L", "P"].includes(p.result)).sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "")),
+      graded: [...ps].filter((p) => p.pl_u != null).sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "") || (a.serial < b.serial ? -1 : 1)),
       best: wins.length ? wins.reduce((a, b) => (better(a, b) ? b : a)) : null };
+  }
+  // the week's running units, pick by pick in kickoff order (each at its ticket size): one line, a soft fade under
+  // it, a dashed zero; hover a point for the pick and the running total
+  function recapCurve(r) {
+    if (r.graded.length < 2) return "";
+    let run = 0; const pts = [0, ...r.graded.map((p) => (run += p.pl_u))];
+    const W = 600, H = 150, lo0 = Math.min(0, ...pts), hi0 = Math.max(0, ...pts), pad = (hi0 - lo0) * 0.08 || 1;
+    const lo = lo0 - pad, hi = hi0 + pad, x = (i) => (i / (pts.length - 1)) * W, y = (v) => ((hi - v) / (hi - lo)) * H;
+    const line = pts.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    const cls = run >= 0 ? "up" : "down", id = `rcg-${r.key}`, step = W / (pts.length - 1);
+    const hits = r.graded.map((p, i) => `<rect x="${(x(i + 1) - step / 2).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"><title>${esc(p.player)} ${p.side} ${p.line}: ${p.result} ${num(p.pl_u, 2, true)}u, running ${num(pts[i + 1], 2, true)}u</title></rect>`).join("");
+    return `<figure class="rc-curve ${cls}"><figcaption>Running units &middot; ${r.graded.length} picks in kickoff order</figcaption>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Running units over the ${PERIOD.toLowerCase()}: finished ${num(run, 2, true)}u">
+        <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="g0"/><stop offset="1" class="g1"/></linearGradient></defs>
+        <path d="${line}L${W},${y(0).toFixed(1)}L0,${y(0).toFixed(1)}Z" fill="url(#${id})"/>
+        <line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" class="zero" vector-effect="non-scaling-stroke"/>
+        <path d="${line}" class="ln" vector-effect="non-scaling-stroke"/><g class="hit">${hits}</g></svg></figure>`;
   }
   function recapCard(r) {
     const rec = `${r.W}-${r.L}${r.P ? "-" + r.P : ""}`;
     const beatTone = r.beat == null || r.beat === 50 ? "" : r.beat > 50 ? "up" : "down";
     const beat = r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%";
     const text = `Line Ledger, ${PERIOD} ${r.w}: ${rec}, ${num(r.sized, 2, true)}u${r.beat != null ? `, beat the close ${r.beat.toFixed(0)}%` : ""}`;
-    const dot = (p) => `<i class="${p.result === "W" ? "up" : p.result === "L" ? "down" : ""}" title="${esc(p.player)} ${p.side} ${p.line}: ${p.result}"></i>`;
     return `<article class="recap" id="recap-${r.key}"><div class="rc-h"><div class="eyebrow">${PERIOD} ${r.w} in review &middot; ${r.season}</div>
         <span class="pill grading">All ${r.n} graded</span></div>
       <div class="rc-big"><div><b>${rec}</b><small>Record</small></div><div><b class="${tone(r.sized)}">${num(r.sized, 2, true)}u</b><small>Units${r.risked ? ` &middot; ROI ${pct(100 * r.sized / r.risked)}` : ""} &middot; 1u each ${num(r.units, 2, true)}u</small></div>
         <div><b class="${beatTone}">${beat}</b><small>Beat the close</small></div></div>
-      <div class="rc-dots" aria-label="${r.W} wins, ${r.L} losses">${r.dots.map(dot).join("")}</div>
+      ${recapCurve(r)}
       <div class="rc-m">${MK.map((k) => `<span><em>${esc(MKT(k).short || MKT(k).label)}</em> ${recLine(MKT(k).weeks[r.key])}</span>`).join("")}</div>
       <div class="rc-f">${r.best ? `<a href="${linkTo(r.best).replace(/^.*\//, "")}">Best hit: <b>${esc(r.best.player)}</b> ${r.best.side} ${r.best.line} (${r.best.price > 0 ? "+" : ""}${r.best.price}) &middot; had <b class="up">${r.best.actual}</b></a>` : "<span></span>"}
         <span class="rc-btns"><a class="more" href="./?season=${r.season}&week=${r.w}">See every pick &rarr;</a><a class="more" href="recap/${r.key}.png" download="line-ledger-${r.key}.png">Image</a><button type="button" class="rshare" data-key="${r.key}" data-text="${esc(text)}">Share</button></span></div></article>`;

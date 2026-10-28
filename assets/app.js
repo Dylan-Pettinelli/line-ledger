@@ -325,7 +325,7 @@
         ${p.result ? `<div class="seal ${p.result}" aria-label="${SEAL[p.result]}">${SEAL[p.result]}</div>` : ""}
       </div>
       <div class="clv"><div class="clv-h">${head}</div>${compare(p, P)}</div>
-      <div class="stats"><span>Model<b>${num(p.model, P.dec)}</b></span><span>Win<b>${pct(p.win, false)}</b></span><span>EV<b>${pct(p.ev)}</b></span><span>Stake<b>${num(p.units, 1)}u</b></span></div>
+      <div class="stats"><span>Model<b>${num(p.model, P.dec)}</b></span><span>Win<b>${pct(p.win, false)}</b></span><span>EV<b>${pct(p.ev)}</b></span><span>${p.pl_u != null ? "Result" : "Size"}<b class="${p.pl_u != null ? tone(p.pl_u) : ""}" title="Size ${num(p.units, 2)}u">${p.pl_u != null ? num(p.pl_u, 2, true) : num(p.units, 2)}u</b></span></div>
       ${details(p, P)}
       <div class="stub">
         <div><span class="serial">No. ${esc(p.serial)}</span><span class="when">Stamped ${when(p.stamped_utc, p.stamped)}${p.verify ? ` &middot; <a class="verify" href="${esc(p.verify)}" target="_blank" rel="noopener noreferrer" title="The public commit that first posted this pick: ${when(p.posted_utc, p.posted_at)}${p.posted_before ? ", before the start" : ""}">verify &nearr;</a>` : ""}</span></div>
@@ -391,7 +391,8 @@
     const cells = [["key", `<b class="${tone(r.clv_ev)}">${pct(r.clv_ev)}</b>`, `value vs close <em class="n">n=${n}${n < 50 ? ", early" : ""}</em>`],
       ["", `<b>${r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%"}</b>`, "beat the close"],
       ["", `<b>${wl(r)}</b>`, P.paper ? "paper record" : "record"],
-      ["", `<b class="${tone(r.units)}">${r.n ? num(r.units, 2, true) + "u" : "&ndash;"}</b>`, "units"]];
+      ["", `<b class="${tone(r.sized)}">${r.sized != null ? num(r.sized, 2, true) + "u" : "&ndash;"}</b>`,
+        `units${r.sized_roi != null ? ` &middot; ROI ${pct(r.sized_roi)}` : ""} <em class="n">1u each: ${r.n ? num(r.units, 2, true) + "u" : "&ndash;"}</em>`]];
     return `<div class="tote${compact ? " compact" : ""}">${cells.map(([c, b, s]) => `<div class="${c}">${b}<span>${s}</span></div>`).join("")}</div>`;
   }
   const scoreboard = () => `<div class="boards">${MK.map((k) => { const P = MKT(k);
@@ -405,10 +406,10 @@
     return recordTableBody(rows) + earlyLine(rows[0].n_clv || 0);
   }
   function recordTableBody(rows) {
-    return `<div class="tablebox"><table><thead><tr><th>Picks</th><th class="num opt">Graded</th><th class="num">W-L-P</th><th class="num opt">Win %</th><th class="num">Units</th><th class="num opt">ROI</th><th class="num key">Value vs close</th><th class="num opt">Beat close</th></tr></thead>
+    return `<div class="tablebox"><table><thead><tr><th>Picks</th><th class="num opt">Graded</th><th class="num">W-L-P</th><th class="num opt">Win %</th><th class="num" title="Each pick at the size on its ticket">Units</th><th class="num opt">ROI</th><th class="num opt" title="Every pick 1 unit">1u each</th><th class="num key">Value vs close</th><th class="num opt">Beat close</th></tr></thead>
       <tbody>${rows.map((x, i) => `<tr class="${x.sub ? "sub" : i === 0 ? "top" : ""}"><td>${esc(x.label)}</td><td class="num opt">${x.n}${x.pending ? ` <span class="note">+${x.pending}</span>` : ""}</td>
-        <td class="num">${wl(x)}</td><td class="num opt">${x.n ? pct(x.win, false) : "&ndash;"}</td><td class="num ${tone(x.units)}">${x.n ? num(x.units, 2, true) : "&ndash;"}</td>
-        <td class="num opt ${tone(x.roi)}">${pct(x.roi)}</td><td class="num key ${tone(x.clv_ev)}">${pct(x.clv_ev)}${earlyNote(x.n_clv)}</td><td class="num opt">${x.beat == null ? "&ndash;" : x.beat.toFixed(0) + "%"}</td></tr>`).join("")}</tbody></table></div>`;
+        <td class="num">${wl(x)}</td><td class="num opt">${x.n ? pct(x.win, false) : "&ndash;"}</td><td class="num ${tone(x.sized)}">${x.sized != null ? num(x.sized, 2, true) : "&ndash;"}</td>
+        <td class="num opt ${tone(x.sized_roi)}">${pct(x.sized_roi)}</td><td class="num opt ${tone(x.units)}">${x.n ? num(x.units, 2, true) : "&ndash;"}</td><td class="num key ${tone(x.clv_ev)}">${pct(x.clv_ev)}${earlyNote(x.n_clv)}</td><td class="num opt">${x.beat == null ? "&ndash;" : x.beat.toFixed(0) + "%"}</td></tr>`).join("")}</tbody></table></div>`;
   }
   function lineChart(vals, caption, last, fmt) {
     if (vals.length < 3) return "";
@@ -422,12 +423,12 @@
   // the charts follow the headline record: live picks only once a market has any (paper picks have their own row)
   const recordPicks = (P) => P.picks.some((p) => !p.paper) ? P.picks.filter((p) => !p.paper) : P.picks;
   function unitsChart(P) {
-    const g = recordPicks(P).filter((p) => p.pl != null).sort((a, b) => a.serial < b.serial ? -1 : 1);
-    let run = 0; const pts = [0, ...g.map((p) => (run += p.pl))];
+    const g = recordPicks(P).filter((p) => p.pl_u != null).sort((a, b) => a.serial < b.serial ? -1 : 1);
+    let run = 0; const pts = [0, ...g.map((p) => (run += p.pl_u))];
     return lineChart(pts, `${esc(P.label)} <span class="muted">units over time, ${g.length} graded</span>`, pts[pts.length - 1], (v) => `${num(v, 2, true)}u`);
   }
   const periodRec = (P, season, w) => P.weeks[`${season}-${w}`];
-  const recLine = (r) => (r && r.n ? `<b>${wl(r)}</b> <b class="${tone(r.units)}">${num(r.units, 2, true)}u</b> <span class="muted">vs close</span> <b class="${tone(r.clv_ev)}">${pct(r.clv_ev)}</b>` : r && r.pending ? `<span class="muted">${r.pending} not graded yet</span>` : `<span class="muted">no picks</span>`)
+  const recLine = (r) => (r && r.n ? `<b>${wl(r)}</b> <b class="${tone(r.sized)}">${num(r.sized || 0, 2, true)}u</b> <span class="muted">vs close</span> <b class="${tone(r.clv_ev)}">${pct(r.clv_ev)}</b>` : r && r.pending ? `<span class="muted">${r.pending} not graded yet</span>` : `<span class="muted">no picks</span>`)
     + (r && r.paper ? ` <span class="chip paper" title="tracked, not bet">paper</span>` : "");
 
   function notify() {
@@ -511,7 +512,8 @@
     const better = (a, b) => paid(b) > paid(a) || (paid(b) === paid(a) && clear(b) > clear(a));
     const wins = ps.filter((p) => p.result === "W" && p.actual != null && p.line);
     return { key, season, w, n: ps.length, W: count("W"), L: count("L"), P: count("P"),
-      units: ps.reduce((s, p) => s + (p.pl || 0), 0),
+      units: ps.reduce((s, p) => s + (p.pl || 0), 0), sized: ps.reduce((s, p) => s + (p.pl_u || 0), 0),
+      risked: ps.reduce((s, p) => s + (p.pl_u != null ? p.units || 0 : 0), 0),
       beat: beats.length ? (100 * beats.filter((p) => p.beat).length) / beats.length : null,
       dots: [...ps].filter((p) => ["W", "L", "P"].includes(p.result)).sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "")),
       best: wins.length ? wins.reduce((a, b) => (better(a, b) ? b : a)) : null };
@@ -520,11 +522,11 @@
     const rec = `${r.W}-${r.L}${r.P ? "-" + r.P : ""}`;
     const beatTone = r.beat == null || r.beat === 50 ? "" : r.beat > 50 ? "up" : "down";
     const beat = r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%";
-    const text = `Line Ledger, ${PERIOD} ${r.w}: ${rec}, ${num(r.units, 2, true)}u${r.beat != null ? `, beat the close ${r.beat.toFixed(0)}%` : ""}`;
+    const text = `Line Ledger, ${PERIOD} ${r.w}: ${rec}, ${num(r.sized, 2, true)}u${r.beat != null ? `, beat the close ${r.beat.toFixed(0)}%` : ""}`;
     const dot = (p) => `<i class="${p.result === "W" ? "up" : p.result === "L" ? "down" : ""}" title="${esc(p.player)} ${p.side} ${p.line}: ${p.result}"></i>`;
     return `<article class="recap" id="recap-${r.key}"><div class="rc-h"><div class="eyebrow">${PERIOD} ${r.w} in review &middot; ${r.season}</div>
         <span class="pill grading">All ${r.n} graded</span></div>
-      <div class="rc-big"><div><b>${rec}</b><small>Record</small></div><div><b class="${tone(r.units)}">${num(r.units, 2, true)}u</b><small>Units (1u flat)</small></div>
+      <div class="rc-big"><div><b>${rec}</b><small>Record</small></div><div><b class="${tone(r.sized)}">${num(r.sized, 2, true)}u</b><small>Units${r.risked ? ` &middot; ROI ${pct(100 * r.sized / r.risked)}` : ""} &middot; 1u each ${num(r.units, 2, true)}u</small></div>
         <div><b class="${beatTone}">${beat}</b><small>Beat the close</small></div></div>
       <div class="rc-dots" aria-label="${r.W} wins, ${r.L} losses">${r.dots.map(dot).join("")}</div>
       <div class="rc-m">${MK.map((k) => `<span><em>${esc(MKT(k).short || MKT(k).label)}</em> ${recLine(MKT(k).weeks[r.key])}</span>`).join("")}</div>
@@ -608,7 +610,7 @@
   }
 
   function resultsPage() {
-    hero("Results", `${PERIOD} by <em>${PERIOD.toLowerCase()}</em>`, "Every graded pick, every market, flat 1 unit each at the stamped price. Tap a row to open that " + PERIOD.toLowerCase() + ".");
+    hero("Results", `${PERIOD} by <em>${PERIOD.toLowerCase()}</em>`, "Every graded pick, every market, at the size on its ticket and the stamped price. Tap a row to open that " + PERIOD.toLowerCase() + ".");
     const keys = [...new Set(MK.flatMap((k) => Object.keys(MKT(k).weeks)))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
     const cards = keys.map((key) => { const [season, w] = key.split("-");
       return `<a class="wkcard" href="${href(F.home)}?season=${season}&week=${w}"><div class="wk-h"><b>${PERIOD} ${w}</b><span class="muted">${season}</span></div>
@@ -633,7 +635,7 @@
       ["agrees", "Sharp agrees", (p) => p.sharp === "agrees"], ["against", "Sharp against", (p) => p.sharp === "against"]];
     let active = "all";
     $("app").innerHTML = `
-      <section><div class="head"><div><div class="eyebrow">Graded flat, 1 unit per pick</div><h2>Record</h2></div></div>${recordTable(P.record)}${unitsChart(P)}
+      <section><div class="head"><div><div class="eyebrow">Each pick at its ticket size &middot; 1u each alongside</div><h2>Record</h2></div></div>${recordTable(P.record)}${unitsChart(P)}
         ${P.record.some((r) => r.label === "Pre-launch") ? `<p class="note"><span class="chip pre">pre-launch</span> picks were made by the same model and time-stamped in our private ledger, but not posted publicly before the start. From ${esc(D.launch)} on, every pick is posted before the start.</p>` : ""}</section>
       <section><div class="head"><div><div class="eyebrow">Newest first</div><h2>Every pick</h2></div></div><div id="tb"></div><div id="picks" class="weekgroups"></div></section>`;
     document.addEventListener("click", (e) => { const b = e.target.closest("#chips button[data-k]"); if (b) { active = b.dataset.k; redraw(false); } });
@@ -694,7 +696,7 @@
       ["Units", graded.length ? `${num(units, 2, true)}u` : "&ndash;", tone(units)], [`Value vs close${earlyNote(clvs.length)}`, pct(clv), tone(clv)],
       ["Picks", String(ps.length), ""]];
     hero(`${esc(p0.team)} &middot; ${markets}`, esc(p0.player),
-      `Every pick the model made on ${esc(p0.player)}, newest first, graded flat 1 unit at the stamped price.${ps.some((p) => p.paper) ? " Paper picks (tracked, not bet) are marked." : ""}`,
+      `Every pick the model made on ${esc(p0.player)}, newest first, graded at the size on its ticket and the stamped price.${ps.some((p) => p.paper) ? " Paper picks (tracked, not bet) are marked." : ""}`,
       `<div class="rc-grid hero-stats">${cells.map(([h, v, c]) => `<div><small>${h}</small><b class="${c}">${v}</b></div>`).join("")}</div>`);
     $("app").innerHTML = `<section><div class="toolbar"><span class="tb-r">${viewBar()}</span></div><div id="picks" class="weekgroups"></div></section>`;
     redraw = () => {
@@ -714,7 +716,7 @@
         <div class="phases">${phaseSections([], null, null)}</div></section>
       <section><div><div class="eyebrow">What to expect</div><h2>Same ledger, new sport</h2></div><div class="steps">
         <div><h3>One slate a ${PERIOD.toLowerCase()}</h3><p>Picks are grouped by ${PERIOD.toLowerCase()}, with the same Open, Live and Final sections, views and search.</p></div>
-        <div><h3>Its own record</h3><p>Each market gets its own page and record, graded flat at the stamped price, kept apart from the other sports.</p></div>
+        <div><h3>Its own record</h3><p>Each market gets its own page and record, graded at the stamped price and size, kept apart from the other sports.</p></div>
         <div><h3>Same scoreboard</h3><p>Closing line value, the Sharp label and the weekly recap all work the same way.</p></div></div></section>
       ${notify()}`;
   }
@@ -736,7 +738,7 @@
         <dt>Beat the close</dt><dd>The pick got a better line than the close, or the same line at a better price.</dd>
         <dt>Line and price bars</dt><dd>How far the line, and the price at the same line, moved from the pick to the close (or to now). Green means toward the pick: the market came to us.</dd>
         <dt>Playable to</dt><dd>The worst price at the stamped line where the pick still clears our value bar (expected value of at least ${D.min_ev ?? 2}%).</dd>
-        <dt>Units</dt><dd>The record is graded flat, 1 unit per pick at the stamped price. The stake on each ticket is a suggestion, where 1u = 1% of a bankroll.</dd></dl></section>
+        <dt>Units</dt><dd>Every ticket shows the model's size for that pick, in units: a quarter of the Kelly stake at the stamped price, at most 2u, so a bigger edge gets a bigger size. The rule is the same every week and the size never changes after the pick is posted. The record grades each pick at that size (Units, ROI on the units risked), and also flat at 1 unit per pick (1u each), so you can judge the picks alone. What a unit is worth is up to you: the model posts dozens of picks a week, so most people use a small slice of their bankroll per unit.</dd></dl></section>
       <section><div><div class="eyebrow">Model + sharp money</div><h2>The Sharp label</h2></div>
         <p class="lede">Pinnacle is the sharpest sportsbook. For every pick we read Pinnacle's line for the same player and ask which side its prices favour at our line. The label stays current until the start, then locks on Pinnacle's closing line (marked "close").</p>
         <dl class="defs"><dt>Sharp agrees</dt><dd>Pinnacle priced our side as the likelier winner.</dd><dt>Sharp neutral</dt><dd>A coin flip at our line.</dd><dt>Sharp against</dt><dd>Pinnacle priced the other side as the likelier winner.</dd><dt>No sharp line</dt><dd>Pinnacle didn't list the player.</dd></dl></section>

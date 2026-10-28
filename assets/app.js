@@ -325,7 +325,7 @@
         ${p.result ? `<div class="seal ${p.result}" aria-label="${SEAL[p.result]}">${SEAL[p.result]}</div>` : ""}
       </div>
       <div class="clv"><div class="clv-h">${head}</div>${compare(p, P)}</div>
-      <div class="stats"><span>Model<b>${num(p.model, P.dec)}</b></span><span>Win<b>${pct(p.win, false)}</b></span><span>EV<b>${pct(p.ev)}</b></span><span>${p.pl_u != null ? "Result" : "Size"}<b class="${p.pl_u != null ? tone(p.pl_u) : ""}" title="Size ${num(p.units, 2)}u">${p.pl_u != null ? num(p.pl_u, 2, true) : num(p.units, 2)}u</b></span></div>
+      <div class="stats"><span>Model<b>${num(p.model, P.dec)}</b></span><span>Win<b>${pct(p.win, false)}</b></span><span>EV<b>${pct(p.ev)}</b></span><span>Size<b>${num(p.units, 1)}u${p.pl_u != null ? ` <i class="${tone(p.pl_u)}">&rarr; ${num(p.pl_u, 2, true)}u</i>` : ""}</b></span></div>
       ${details(p, P)}
       <div class="stub">
         <div><span class="serial">No. ${esc(p.serial)}</span><span class="when">Stamped ${when(p.stamped_utc, p.stamped)}${p.verify ? ` &middot; <a class="verify" href="${esc(p.verify)}" target="_blank" rel="noopener noreferrer" title="The public commit that first posted this pick: ${when(p.posted_utc, p.posted_at)}${p.posted_before ? ", before the start" : ""}">verify &nearr;</a>` : ""}</span></div>
@@ -689,7 +689,7 @@
     }
     const p0 = ps[0], graded = ps.filter((p) => p.result && p.result !== "VOID"), clvs = ps.filter((p) => p.clv_ev != null);
     const count = (r) => graded.filter((p) => p.result === r).length;
-    const units = graded.reduce((s, p) => s + (p.pl || 0), 0);
+    const units = graded.reduce((s, p) => s + (p.pl_u || 0), 0);           // at each ticket's size, like the record
     const clv = clvs.length ? clvs.reduce((s, p) => s + p.clv_ev, 0) / clvs.length : null;
     const markets = [...new Set(ps.map((p) => MKT(p.prop).short || MKT(p.prop).label))].join(" &middot; ");
     const cells = [["Record", graded.length ? `${count("W")}-${count("L")}${count("P") ? "-" + count("P") : ""}` : "&ndash;", ""],

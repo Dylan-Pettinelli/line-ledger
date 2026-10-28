@@ -505,23 +505,30 @@
     const every = picksOf(key), [season, w] = key.split("-").map(Number);
     const ps = every.some((p) => !p.paper) ? every.filter((p) => !p.paper) : every;     // totals: live picks only
     const count = (r) => ps.filter((p) => p.result === r).length;
-    const clvs = ps.filter((p) => p.clv_ev != null), beats = ps.filter((p) => p.beat != null);
+    const beats = ps.filter((p) => p.beat != null);
+    // best hit: the win that paid the most units, then the one that cleared its line by the most (same as the image)
+    const paid = (p) => Math.round((p.pl || 0) * 1000), clear = (p) => (p.side === "OVER" ? p.actual - p.line : p.line - p.actual) / Math.sqrt(Math.abs(p.line));
+    const better = (a, b) => paid(b) > paid(a) || (paid(b) === paid(a) && clear(b) > clear(a));
+    const wins = ps.filter((p) => p.result === "W" && p.actual != null && p.line);
     return { key, season, w, n: ps.length, W: count("W"), L: count("L"), P: count("P"),
       units: ps.reduce((s, p) => s + (p.pl || 0), 0),
-      clv: clvs.length ? clvs.reduce((s, p) => s + p.clv_ev, 0) / clvs.length : null, n_clv: clvs.length,
       beat: beats.length ? (100 * beats.filter((p) => p.beat).length) / beats.length : null,
-      best: clvs.length ? clvs.reduce((a, b) => (b.clv_ev > a.clv_ev ? b : a)) : null };
+      dots: [...ps].filter((p) => ["W", "L", "P"].includes(p.result)).sort((a, b) => (a.kick_utc || "").localeCompare(b.kick_utc || "")),
+      best: wins.length ? wins.reduce((a, b) => (better(a, b) ? b : a)) : null };
   }
   function recapCard(r) {
     const rec = `${r.W}-${r.L}${r.P ? "-" + r.P : ""}`;
-    const text = `Line Ledger, ${PERIOD} ${r.w}: ${rec}, ${num(r.units, 2, true)}u${r.clv != null ? `, value vs close ${pct(r.clv).replace("&ndash;", "-")}` : ""}`;
-    const cells = [["Record", rec, ""], ["Units", `${num(r.units, 2, true)}u`, tone(r.units)], [`Value vs close${earlyNote(r.n_clv)}`, pct(r.clv), tone(r.clv)],
-      ["Beat the close", r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%", ""]];
-    return `<article class="recap" id="recap-${r.key}"><div class="rc-h"><div><div class="eyebrow">${PERIOD} in review &middot; ${r.season}</div><h2>${PERIOD} ${r.w}</h2></div>
+    const beatTone = r.beat == null || r.beat === 50 ? "" : r.beat > 50 ? "up" : "down";
+    const beat = r.beat == null ? "&ndash;" : r.beat.toFixed(0) + "%";
+    const text = `Line Ledger, ${PERIOD} ${r.w}: ${rec}, ${num(r.units, 2, true)}u${r.beat != null ? `, beat the close ${r.beat.toFixed(0)}%` : ""}`;
+    const dot = (p) => `<i class="${p.result === "W" ? "up" : p.result === "L" ? "down" : ""}" title="${esc(p.player)} ${p.side} ${p.line}: ${p.result}"></i>`;
+    return `<article class="recap" id="recap-${r.key}"><div class="rc-h"><div class="eyebrow">${PERIOD} ${r.w} in review &middot; ${r.season}</div>
         <span class="pill grading">All ${r.n} graded</span></div>
-      <div class="rc-grid">${cells.map(([h, v, c]) => `<div><small>${h}</small><b class="${c}">${v}</b></div>`).join("")}</div>
+      <div class="rc-big"><div><b>${rec}</b><small>Record</small></div><div><b class="${tone(r.units)}">${num(r.units, 2, true)}u</b><small>Units (1u flat)</small></div>
+        <div><b class="${beatTone}">${beat}</b><small>Beat the close</small></div></div>
+      <div class="rc-dots" aria-label="${r.W} wins, ${r.L} losses">${r.dots.map(dot).join("")}</div>
       <div class="rc-m">${MK.map((k) => `<span><em>${esc(MKT(k).short || MKT(k).label)}</em> ${recLine(MKT(k).weeks[r.key])}</span>`).join("")}</div>
-      <div class="rc-f">${r.best ? `<a href="${linkTo(r.best).replace(/^.*\//, "")}">Best close: <b>${esc(r.best.player)}</b> ${r.best.side} ${r.best.line} <b class="${tone(r.best.clv_ev)}">${pct(r.best.clv_ev)}</b></a>` : "<span></span>"}
+      <div class="rc-f">${r.best ? `<a href="${linkTo(r.best).replace(/^.*\//, "")}">Best hit: <b>${esc(r.best.player)}</b> ${r.best.side} ${r.best.line} (${r.best.price > 0 ? "+" : ""}${r.best.price}) &middot; had <b class="up">${r.best.actual}</b></a>` : "<span></span>"}
         <span class="rc-btns"><a class="more" href="./?season=${r.season}&week=${r.w}">See every pick &rarr;</a><a class="more" href="recap/${r.key}.png" download="line-ledger-${r.key}.png">Image</a><button type="button" class="rshare" data-key="${r.key}" data-text="${esc(text)}">Share</button></span></div></article>`;
   }
   document.addEventListener("click", async (e) => {
